@@ -129,7 +129,7 @@ public sealed partial class ControllerDetailPage : Page
             _controller.StableKey,
             1f,
             1f,
-            TimeSpan.FromMilliseconds(600));
+            TimeSpan.FromMilliseconds(1500));
 
         RumbleBar.IsOpen = !available;
     }

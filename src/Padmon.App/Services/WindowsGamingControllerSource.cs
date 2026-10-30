@@ -128,7 +128,8 @@ public sealed class WindowsGamingControllerSource : IControllerSource, IAsyncDis
 
         if (runtime.Device.VendorId == 0x045E)
         {
-            PadmonLog.Info("using XInput + Gamepad rumble path for Xbox-class controller");
+            PadmonLog.Info(
+                $"using XInput + Gamepad rumble path for Xbox-class controller (gamepadPresent={runtime.Gamepad is not null})");
 
             var xinputTask = XInputRumble.PulseAsync(
                 lowFrequency,
@@ -171,20 +172,18 @@ public sealed class WindowsGamingControllerSource : IControllerSource, IAsyncDis
     {
         try
         {
-            gamepad.Vibration = new GamepadVibration
+            var vibration = new GamepadVibration
             {
                 LeftMotor = Math.Clamp(lowFrequency, 0f, 1f),
-                RightMotor = Math.Clamp(highFrequency, 0f, 1f),
-                LeftTrigger = Math.Clamp(lowFrequency, 0f, 1f),
-                RightTrigger = Math.Clamp(highFrequency, 0f, 1f)
+                RightMotor = Math.Clamp(highFrequency, 0f, 1f)
             };
 
-            try
+            var end = DateTimeOffset.UtcNow + duration;
+
+            while (DateTimeOffset.UtcNow < end && !cancellationToken.IsCancellationRequested)
             {
-                await Task.Delay(duration, cancellationToken).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
+                gamepad.Vibration = vibration;
+                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
             }
 
             return true;
@@ -322,7 +321,7 @@ public sealed class WindowsGamingControllerSource : IControllerSource, IAsyncDis
             if (added)
             {
                 PadmonLog.Info(
-                    $"WGI controller added: name='{device.Name}' vendor={device.VendorId:X4} product={device.ProductId:X4} key='{device.StableKey}'");
+                    $"WGI controller added: name='{device.Name}' vendor={device.VendorId:X4} product={device.ProductId:X4} key='{device.StableKey}' motors={controller.ForceFeedbackMotors.Count}");
                 ConnectionChanged?.Invoke(this, new ControllerConnectionChangedEventArgs(device, true));
             }
         }

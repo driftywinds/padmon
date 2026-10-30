@@ -22,29 +22,28 @@ internal static class XInputRumble
         var high = (ushort)(Math.Clamp(highFrequency, 0f, 1f) * ushort.MaxValue);
         var vibration = new XInputVibration { LeftMotorSpeed = low, RightMotorSpeed = high };
         var anySucceeded = false;
-
-        foreach (var index in indices)
-        {
-            var result = XInputSetState(index, ref vibration);
-            if (result == 0)
-            {
-                anySucceeded = true;
-                PadmonLog.Info($"XInput rumble: slot={index} low={low} high={high}");
-            }
-            else
-            {
-                PadmonLog.Info($"XInput rumble failed: slot={index} result={result}");
-            }
-        }
-
-        if (!anySucceeded)
-        {
-            return false;
-        }
+        var end = DateTimeOffset.UtcNow + duration;
 
         try
         {
-            await Task.Delay(duration, cancellationToken).ConfigureAwait(false);
+            while (DateTimeOffset.UtcNow < end && !cancellationToken.IsCancellationRequested)
+            {
+                foreach (var index in indices)
+                {
+                    var result = XInputSetState(index, ref vibration);
+
+                    if (result == 0)
+                    {
+                        anySucceeded = true;
+                    }
+                    else
+                    {
+                        PadmonLog.Info($"XInput rumble failed: slot={index} result={result}");
+                    }
+                }
+
+                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+            }
         }
         catch (OperationCanceledException)
         {
@@ -58,7 +57,13 @@ internal static class XInputRumble
             }
         }
 
-        return true;
+        if (anySucceeded)
+        {
+            PadmonLog.Info(
+                $"XInput rumble: slots=[{string.Join(',', indices)}] low={low} high={high} duration={duration.TotalMilliseconds:0}ms");
+        }
+
+        return anySucceeded;
     }
 
     private static List<uint> FindConnectedIndices()
