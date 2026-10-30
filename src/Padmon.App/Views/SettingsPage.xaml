@@ -173,6 +173,11 @@
                                     Click="TestNotification_Click"
                                     Content="Send test" />
                             </Grid>
+                            <TextBlock
+                                Margin="0,10,0,0"
+                                Style="{StaticResource CaptionStyle}"
+                                Text="{x:Bind ViewModel.NotificationTestStatus, Mode=OneWay}"
+                                TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
                 </StackPanel>

@@ -96,6 +96,6 @@ See [docs/architecture.md](docs/architecture.md) for the details.
 
 - The controller support matrix still needs real-hardware verification. The current test set is GameSir Cyclone 2, EasySMX X20, an original Xbox One controller, and an older PowerA controller.
 - Controllers without serial numbers and without a PnP container ID may share a model fingerprint; that is shown as a model-level identity rather than pretending per-unit identity.
-- Native Windows notifications are opt-in in Settings and default to the in-app card. Low-integrity test sessions block native shell notifications; the in-app fallback is used there. Native toasts should be tested from a normal Explorer launch.
+- Native Windows notifications are opt-in in Settings and default to the in-app card. The native path uses the Windows App SDK notification manager, then the documented unpackaged desktop-toast path: a Start Menu shortcut with an AppUserModelID. Low-integrity test sessions block native shell notifications; the in-app fallback is used there. Launch padmon normally from the Start Menu to test the native path.
 - Single-instance behavior and a graceful “forget controller” flow are good next additions.
 - There is intentionally no MSIX packaging. Release packaging can be a portable self-contained folder first and MSIX later if the distribution story calls for it.

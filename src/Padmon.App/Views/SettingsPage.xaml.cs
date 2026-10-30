@@ -17,7 +17,14 @@ public sealed partial class SettingsPage : Page
 
     private void TestNotification_Click(object sender, RoutedEventArgs e)
     {
-        App.Services.Notifications.ShowTest();
+        var nativeRequested = App.Services.Notifications.PreferNative;
+        var nativeSent = App.Services.Notifications.ShowTest();
+
+        ViewModel.NotificationTestStatus = !nativeRequested
+            ? "Sent as an in-app card. Enable native notifications to use the Windows notification system."
+            : nativeSent
+                ? "Sent as a native Windows notification. Check the bottom-right corner and Notification Center."
+                : "Windows blocked the native toast; padmon used the in-app card. This normally means the app was launched from a restricted or low-integrity session. Launch padmon normally from the Start Menu and retry.";
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)

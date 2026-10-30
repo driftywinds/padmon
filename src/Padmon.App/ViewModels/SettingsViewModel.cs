@@ -8,6 +8,7 @@ public sealed class SettingsViewModel : ObservableObject
 {
     private readonly ISettingsStore _store;
     private readonly PadmonSettings _settings;
+    private string _notificationTestStatus = "Use Send test to check which notification style Windows allows.";
 
     public SettingsViewModel(ISettingsStore store)
     {
@@ -98,6 +99,12 @@ public sealed class SettingsViewModel : ObservableObject
             OnPropertyChanged();
             _ = SaveAsync();
         }
+    }
+
+    public string NotificationTestStatus
+    {
+        get => _notificationTestStatus;
+        set => SetProperty(ref _notificationTestStatus, value);
     }
 
     public bool NativeNotifications

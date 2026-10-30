@@ -72,7 +72,7 @@ public sealed class NotificationService : IDisposable
         var title = $"{displayName} connected";
         var body = $"{Describe(device)} · padmon is watching";
 
-        if (PreferNative && TryShow(title, body))
+        if (PreferNative && TryShowNative(title, body))
         {
             return;
         }
@@ -86,7 +86,7 @@ public sealed class NotificationService : IDisposable
         var title = $"{displayName} disconnected";
         var body = $"{Describe(device)} · still watching";
 
-        if (PreferNative && TryShow(title, body))
+        if (PreferNative && TryShowNative(title, body))
         {
             return;
         }
@@ -95,17 +95,29 @@ public sealed class NotificationService : IDisposable
         _fallback?.Invoke(title, body);
     }
 
-    public void ShowTest()
+    public bool ShowTest()
     {
         const string title = "padmon notification test";
         const string body = "If you can see this, notifications are working.";
 
-        if (PreferNative && TryShow(title, body))
+        if (PreferNative && TryShowNative(title, body))
         {
-            return;
+            return true;
         }
 
         _fallback?.Invoke(title, body);
+        return false;
+    }
+
+    private bool TryShowNative(string title, string body)
+    {
+        if (TryShow(title, body))
+        {
+            return true;
+        }
+
+        PadmonLog.Info("modern notification path unavailable; trying desktop toast path");
+        return DesktopToastService.TryShow(title, body);
     }
 
     public void Dispose()
