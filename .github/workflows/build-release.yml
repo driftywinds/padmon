@@ -44,7 +44,6 @@ jobs:
           --configuration Release
           --runtime win-x64
           --self-contained true
-          --no-restore
           --property:Platform=x64
           --property:WindowsAppSDKSelfContained=true
           --property:UseSharedCompilation=false
