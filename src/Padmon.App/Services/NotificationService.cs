@@ -9,7 +9,22 @@ namespace Padmon.Services;
 public sealed class NotificationService : IDisposable
 {
     private bool _registered;
+    private bool _preferNative;
     private Action<string, string>? _fallback;
+
+    public bool PreferNative
+    {
+        get => _preferNative;
+        set
+        {
+            _preferNative = value;
+
+            if (value)
+            {
+                Initialize();
+            }
+        }
+    }
 
     public void Initialize()
     {
@@ -57,11 +72,13 @@ public sealed class NotificationService : IDisposable
         var title = $"{displayName} connected";
         var body = $"{Describe(device)} · padmon is watching";
 
-        if (!TryShow(title, body))
+        if (PreferNative && TryShow(title, body))
         {
-            PadmonLog.Info($"notification fallback: {title}");
-            _fallback?.Invoke(title, body);
+            return;
         }
+
+        PadmonLog.Info($"notification fallback: {title}");
+        _fallback?.Invoke(title, body);
     }
 
     public void ShowDisconnected(string displayName, ControllerDevice device)
@@ -69,11 +86,26 @@ public sealed class NotificationService : IDisposable
         var title = $"{displayName} disconnected";
         var body = $"{Describe(device)} · still watching";
 
-        if (!TryShow(title, body))
+        if (PreferNative && TryShow(title, body))
         {
-            PadmonLog.Info($"notification fallback: {title}");
-            _fallback?.Invoke(title, body);
+            return;
         }
+
+        PadmonLog.Info($"notification fallback: {title}");
+        _fallback?.Invoke(title, body);
+    }
+
+    public void ShowTest()
+    {
+        const string title = "padmon notification test";
+        const string body = "If you can see this, notifications are working.";
+
+        if (PreferNative && TryShow(title, body))
+        {
+            return;
+        }
+
+        _fallback?.Invoke(title, body);
     }
 
     public void Dispose()

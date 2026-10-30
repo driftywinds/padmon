@@ -125,11 +125,13 @@ public sealed partial class ControllerDetailPage : Page
             return;
         }
 
-        await App.Services.Monitor.RumbleAsync(
+        var available = await App.Services.Monitor.RumbleAsync(
             _controller.StableKey,
             0.7f,
             0.7f,
             TimeSpan.FromMilliseconds(350));
+
+        RumbleBar.IsOpen = !available;
     }
 
     private void Back_Click(object sender, RoutedEventArgs e)

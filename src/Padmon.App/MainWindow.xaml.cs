@@ -1,5 +1,4 @@
 using System.Collections.Specialized;
-using System.ComponentModel;
 using Microsoft.UI;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
@@ -43,8 +42,6 @@ public sealed partial class MainWindow : Window, IDisposable
         Closed += OnClosed;
         AppWindow.Closing += OnAppWindowClosing;
         App.Services.Monitor.Controllers.CollectionChanged += OnControllersChanged;
-        App.Services.Monitor.PropertyChanged += OnMonitorPropertyChanged;
-        UpdateMonitoringStatus();
     }
 
     public void NavigateTo(string tag)
@@ -119,7 +116,6 @@ public sealed partial class MainWindow : Window, IDisposable
     private void OnClosed(object sender, WindowEventArgs args)
     {
         App.Services.Monitor.Controllers.CollectionChanged -= OnControllersChanged;
-        App.Services.Monitor.PropertyChanged -= OnMonitorPropertyChanged;
         Dispose();
 
         try
@@ -160,34 +156,6 @@ public sealed partial class MainWindow : Window, IDisposable
     private void OnControllersChanged(object? sender, NotifyCollectionChangedEventArgs args)
     {
         UpdateTrayToolTip();
-    }
-
-    private void OnMonitorPropertyChanged(object? sender, PropertyChangedEventArgs args)
-    {
-        if (args.PropertyName is nameof(ControllerMonitor.IsMonitoring) or nameof(ControllerMonitor.Error))
-        {
-            UpdateMonitoringStatus();
-        }
-    }
-
-    private void UpdateMonitoringStatus()
-    {
-        if (!string.IsNullOrWhiteSpace(App.Services.Monitor.Error))
-        {
-            MonitorStatusText.Text = "Input issue";
-            MonitorDot.Fill = new SolidColorBrush(Colors.IndianRed);
-            return;
-        }
-
-        if (App.Services.Monitor.IsMonitoring)
-        {
-            MonitorStatusText.Text = "Watching";
-            MonitorDot.Fill = new SolidColorBrush(Colors.SeaGreen);
-            return;
-        }
-
-        MonitorStatusText.Text = "Starting";
-        MonitorDot.Fill = new SolidColorBrush(Colors.Goldenrod);
     }
 
     private void UpdateTrayToolTip()

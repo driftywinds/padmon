@@ -53,32 +53,6 @@
                     Text="controller monitor" />
             </StackPanel>
 
-            <StackPanel
-                Grid.Column="2"
-                Margin="0,0,150,0"
-                Orientation="Horizontal"
-                Spacing="8"
-                VerticalAlignment="Center"
-                IsHitTestVisible="False">
-                <Border
-                    Padding="10,4"
-                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                    CornerRadius="12">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <Ellipse
-                            x:Name="MonitorDot"
-                            Width="7"
-                            Height="7"
-                            VerticalAlignment="Center"
-                            Fill="{ThemeResource SystemFillColorSuccessBrush}" />
-                        <TextBlock
-                            x:Name="MonitorStatusText"
-                            FontSize="12"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="Watching" />
-                    </StackPanel>
-                </Border>
-            </StackPanel>
         </Grid>
 
         <NavigationView

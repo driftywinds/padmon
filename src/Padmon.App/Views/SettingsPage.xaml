@@ -133,6 +133,46 @@
                                     OffContent=""
                                     OnContent="" />
                             </Grid>
+                            <Border Margin="0,14" Style="{StaticResource DividerStyle}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Style="{StaticResource CardTitleStyle}" Text="Native Windows notifications" />
+                                    <TextBlock
+                                        Style="{StaticResource CardSubtitleStyle}"
+                                        Text="Use Windows 11 Action Center toasts instead of padmon's in-app cards. Falls back to in-app if Windows blocks the notification." />
+                                </StackPanel>
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    Margin="20,0,0,0"
+                                    VerticalAlignment="Center"
+                                    AutomationProperties.Name="Native Windows notifications"
+                                    IsOn="{x:Bind ViewModel.NativeNotifications, Mode=TwoWay}"
+                                    OffContent=""
+                                    OnContent="" />
+                            </Grid>
+                            <Border Margin="0,14" Style="{StaticResource DividerStyle}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Style="{StaticResource CardTitleStyle}" Text="Test notification" />
+                                    <TextBlock
+                                        Style="{StaticResource CardSubtitleStyle}"
+                                        Text="Trigger a notification now and see which presentation Windows allows." />
+                                </StackPanel>
+                                <Button
+                                    Grid.Column="1"
+                                    Margin="20,0,0,0"
+                                    AutomationProperties.Name="Test notification"
+                                    Click="TestNotification_Click"
+                                    Content="Send test" />
+                            </Grid>
                         </StackPanel>
                     </Border>
                 </StackPanel>

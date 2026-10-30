@@ -65,6 +65,14 @@
                     Title="Controller disconnected"
                     Message="The last input state is still shown below." />
 
+                <InfoBar
+                    x:Name="RumbleBar"
+                    IsClosable="True"
+                    IsOpen="False"
+                    Severity="Informational"
+                    Title="Rumble unavailable"
+                    Message="Windows did not expose a rumble motor for this controller in its current mode." />
+
                 <Grid ColumnSpacing="16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />

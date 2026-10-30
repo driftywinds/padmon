@@ -100,6 +100,23 @@ public sealed class SettingsViewModel : ObservableObject
         }
     }
 
+    public bool NativeNotifications
+    {
+        get => _settings.UseNativeNotifications;
+        set
+        {
+            if (_settings.UseNativeNotifications == value)
+            {
+                return;
+            }
+
+            _settings.UseNativeNotifications = value;
+            App.Services.Notifications.PreferNative = value;
+            OnPropertyChanged();
+            _ = SaveAsync();
+        }
+    }
+
     public int RetentionIndex
     {
         get => _settings.HistoryRetentionDays switch

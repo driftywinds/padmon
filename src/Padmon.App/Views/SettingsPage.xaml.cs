@@ -15,6 +15,11 @@ public sealed partial class SettingsPage : Page
 
     public SettingsViewModel ViewModel { get; private set; }
 
+    private void TestNotification_Click(object sender, RoutedEventArgs e)
+    {
+        App.Services.Notifications.ShowTest();
+    }
+
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);

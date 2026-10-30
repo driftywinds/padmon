@@ -47,6 +47,7 @@ public sealed class AppServices
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
         Settings = await SettingsStore.LoadAsync(cancellationToken).ConfigureAwait(false);
+        Notifications.PreferNative = Settings.UseNativeNotifications;
         await History.InitializeAsync(cancellationToken).ConfigureAwait(false);
         await History.CloseOrphanedSessionsAsync(cancellationToken).ConfigureAwait(false);
 

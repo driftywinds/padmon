@@ -12,6 +12,8 @@ public sealed class PadmonSettings
 
     public bool NotifyOnlyWhenBackground { get; set; }
 
+    public bool UseNativeNotifications { get; set; }
+
     public int HistoryRetentionDays { get; set; } = 90;
 
     public string Theme { get; set; } = "System";

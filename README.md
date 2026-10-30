@@ -14,8 +14,9 @@ It is deliberately **not** a controller configuration suite. There are no remaps
 - New/known device handling, battery and transport information where the device exposes it.
 - App-level renaming that uses the chosen name throughout the UI and notifications.
 - A live tester with buttons, sticks, triggers, shoulders, hats, and raw axis values.
+- A "More information" stats-for-nerds dialog with identity, transport, mapping, history, and live sample details.
 - A tray-resident background mode, close-to-tray behavior, and opt-in start with Windows.
-- Windows notifications for connect/disconnect, with a tray-balloon or in-app fallback when the modern notification API is unavailable.
+- Windows notifications for connect/disconnect, with a selectable native Windows 11 style, and tray-balloon/in-app fallbacks when the modern notification API is unavailable.
 - SQLite history with retention settings; no cloud, telemetry, or account.
 
 ## Requirements
@@ -63,6 +64,15 @@ $env:PADMON_DATA_DIR = 'W:\repos\padmon\.tmp\padmon-data'
 
 The app icon and tray icon are generated from `tools/generate-icon.py` (Pillow).
 
+## Releases
+
+`.github/workflows/build-release.yml` builds the app on Windows and attaches a portable `padmon-win-x64.zip` to a GitHub Release when a `v*` tag is pushed.
+
+```powershell
+git tag v0.1.0
+git push origin v0.1.0
+```
+
 ## Data and privacy
 
 Everything stays local:
@@ -86,6 +96,6 @@ See [docs/architecture.md](docs/architecture.md) for the details.
 
 - The controller support matrix still needs real-hardware verification. The current test set is GameSir Cyclone 2, EasySMX X20, an original Xbox One controller, and an older PowerA controller.
 - Controllers without serial numbers and without a PnP container ID may share a model fingerprint; that is shown as a model-level identity rather than pretending per-unit identity.
-- The modern Windows App SDK notification path is implemented, with tray-balloon and in-app fallbacks. Low-integrity test sessions block native shell notifications; the in-app card is used there.
+- Native Windows notifications are opt-in in Settings and default to the in-app card. Low-integrity test sessions block native shell notifications; the in-app fallback is used there. Native toasts should be tested from a normal Explorer launch.
 - Single-instance behavior and a graceful “forget controller” flow are good next additions.
 - There is intentionally no MSIX packaging. Release packaging can be a portable self-contained folder first and MSIX later if the distribution story calls for it.

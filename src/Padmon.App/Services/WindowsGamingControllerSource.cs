@@ -111,44 +111,93 @@ public sealed class WindowsGamingControllerSource : IControllerSource, IAsyncDis
         TimeSpan duration,
         CancellationToken cancellationToken = default)
     {
-        Gamepad? gamepad;
+        RawRuntime? runtime;
 
         lock (_gate)
         {
-            gamepad = _devices.Values
-                .FirstOrDefault(runtime => string.Equals(
-                    runtime.Device.StableKey,
-                    stableKey,
-                    StringComparison.Ordinal))
-                ?.Gamepad;
+            runtime = _devices.Values.FirstOrDefault(candidate => string.Equals(
+                candidate.Device.StableKey,
+                stableKey,
+                StringComparison.Ordinal));
         }
 
-        if (gamepad is null)
+        if (runtime is null)
         {
             return false;
         }
 
-        gamepad.Vibration = new GamepadVibration
+        if (runtime.Device.VendorId == 0x045E)
         {
-            LeftMotor = Math.Clamp(lowFrequency, 0f, 1f),
-            RightMotor = Math.Clamp(highFrequency, 0f, 1f),
-            LeftTrigger = Math.Clamp(lowFrequency, 0f, 1f),
-            RightTrigger = Math.Clamp(highFrequency, 0f, 1f)
-        };
+            PadmonLog.Info("using XInput + Gamepad rumble path for Xbox-class controller");
 
+            var xinputTask = XInputRumble.PulseAsync(
+                lowFrequency,
+                highFrequency,
+                duration,
+                cancellationToken);
+
+            var gamepadTask = runtime.Gamepad is null
+                ? Task.FromResult(false)
+                : PulseGamepadAsync(
+                    runtime.Gamepad,
+                    lowFrequency,
+                    highFrequency,
+                    duration,
+                    cancellationToken);
+
+            var results = await Task.WhenAll(xinputTask, gamepadTask).ConfigureAwait(false);
+            return results.Any(result => result);
+        }
+
+        if (runtime.Gamepad is null)
+        {
+            return false;
+        }
+
+        return await PulseGamepadAsync(
+            runtime.Gamepad,
+            lowFrequency,
+            highFrequency,
+            duration,
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task<bool> PulseGamepadAsync(
+        Gamepad gamepad,
+        float lowFrequency,
+        float highFrequency,
+        TimeSpan duration,
+        CancellationToken cancellationToken)
+    {
         try
         {
-            await Task.Delay(duration, cancellationToken).ConfigureAwait(false);
+            gamepad.Vibration = new GamepadVibration
+            {
+                LeftMotor = Math.Clamp(lowFrequency, 0f, 1f),
+                RightMotor = Math.Clamp(highFrequency, 0f, 1f),
+                LeftTrigger = Math.Clamp(lowFrequency, 0f, 1f),
+                RightTrigger = Math.Clamp(highFrequency, 0f, 1f)
+            };
+
+            try
+            {
+                await Task.Delay(duration, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+
+            return true;
         }
-        catch (OperationCanceledException)
+        catch (Exception exception)
         {
+            PadmonLog.Error("Gamepad rumble failed", exception);
+            return false;
         }
         finally
         {
             gamepad.Vibration = default;
         }
-
-        return true;
     }
 
     public async ValueTask DisposeAsync()
