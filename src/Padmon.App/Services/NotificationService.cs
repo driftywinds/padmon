@@ -6,11 +6,18 @@ using Padmon.Core.Diagnostics;
 
 namespace Padmon.Services;
 
+public enum NotificationDeliveryKind
+{
+    InApp,
+    Tray,
+    Native
+}
+
 public sealed class NotificationService : IDisposable
 {
     private bool _registered;
     private bool _preferNative;
-    private Action<string, string>? _fallback;
+    private Func<string, string, bool>? _fallback;
 
     public bool PreferNative
     {
@@ -70,7 +77,7 @@ public sealed class NotificationService : IDisposable
         }
     }
 
-    public void SetFallback(Action<string, string> fallback)
+    public void SetFallback(Func<string, string, bool> fallback)
     {
         _fallback = fallback;
     }
@@ -86,7 +93,7 @@ public sealed class NotificationService : IDisposable
         }
 
         PadmonLog.Info($"notification fallback: {title}");
-        _fallback?.Invoke(title, body);
+        _ = _fallback?.Invoke(title, body);
     }
 
     public void ShowDisconnected(string displayName, ControllerDevice device)
@@ -100,21 +107,21 @@ public sealed class NotificationService : IDisposable
         }
 
         PadmonLog.Info($"notification fallback: {title}");
-        _fallback?.Invoke(title, body);
+        _ = _fallback?.Invoke(title, body);
     }
 
-    public bool ShowTest()
+    public NotificationDeliveryKind ShowTest()
     {
         const string title = "padmon notification test";
         const string body = "If you can see this, notifications are working.";
 
         if (PreferNative && TryShowNative(title, body))
         {
-            return true;
+            return NotificationDeliveryKind.Native;
         }
 
-        _fallback?.Invoke(title, body);
-        return false;
+        var tray = _fallback?.Invoke(title, body) ?? false;
+        return tray ? NotificationDeliveryKind.Tray : NotificationDeliveryKind.InApp;
     }
 
     private bool TryShowNative(string title, string body)

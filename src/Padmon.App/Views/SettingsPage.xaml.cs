@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
+using Padmon.Services;
 using Padmon.ViewModels;
 
 namespace Padmon.Views;
@@ -18,13 +19,19 @@ public sealed partial class SettingsPage : Page
     private void TestNotification_Click(object sender, RoutedEventArgs e)
     {
         var nativeRequested = App.Services.Notifications.PreferNative;
-        var nativeSent = App.Services.Notifications.ShowTest();
+        var delivery = App.Services.Notifications.ShowTest();
 
-        ViewModel.NotificationTestStatus = !nativeRequested
-            ? "Sent as an in-app card. Enable native notifications to use the Windows notification system."
-            : nativeSent
-                ? "Sent as a native Windows notification. Check the bottom-right corner and Notification Center."
-                : "Windows blocked the native toast; padmon used the in-app card. This normally means the app was launched from a restricted or low-integrity session. Launch padmon normally from the Start Menu and retry.";
+        ViewModel.NotificationTestStatus = delivery switch
+        {
+            NotificationDeliveryKind.Native =>
+                "Sent as a native Windows notification. Check the bottom-right corner and Notification Center.",
+            NotificationDeliveryKind.Tray when nativeRequested =>
+                "Windows blocked the native toast; padmon showed a tray balloon instead. A tray balloon is not stored in Notification Center. Check the padmon.log native toast line for the exact reason.",
+            NotificationDeliveryKind.Tray =>
+                "Sent as a tray balloon. Enable native notifications to use the Windows notification system and Notification Center.",
+            _ =>
+                "Windows blocked the native toast and no tray icon was available; padmon used the in-app card."
+        };
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)

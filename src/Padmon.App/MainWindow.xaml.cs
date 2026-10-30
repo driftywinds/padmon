@@ -106,11 +106,12 @@ public sealed partial class MainWindow : Window, IDisposable
         {
             if (_trayIcon.ShowBalloon(title, body))
             {
-                return;
+                return true;
             }
 
             PadmonLog.Info($"showing in-app notification: {title}");
             ShowInAppNotification(title, body);
+            return false;
         });
         UpdateTrayToolTip();
     }

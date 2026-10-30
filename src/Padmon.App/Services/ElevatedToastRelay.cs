@@ -42,7 +42,12 @@ internal static class ElevatedToastRelay
             return false;
         }
 
-        var executable = Environment.ProcessPath;
+        var executable = Path.Combine(AppContext.BaseDirectory, "toast", "Padmon.Toast.exe");
+        if (!File.Exists(executable))
+        {
+            executable = Environment.ProcessPath ?? string.Empty;
+        }
+
         if (string.IsNullOrWhiteSpace(executable) || !File.Exists(executable))
         {
             return false;
