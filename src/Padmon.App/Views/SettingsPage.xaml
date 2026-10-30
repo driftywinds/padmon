@@ -1,0 +1,251 @@
+<Page
+    x:Class="Padmon.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Background="Transparent"
+    NavigationCacheMode="Required">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid
+            MaxWidth="1080"
+            Padding="32,24,32,40"
+            HorizontalAlignment="Stretch">
+            <StackPanel Spacing="26">
+                <StackPanel Spacing="6">
+                    <TextBlock Style="{StaticResource PageTitleStyle}" Text="Settings" />
+                    <TextBlock
+                        Style="{StaticResource PageSubtitleStyle}"
+                        Text="How padmon watches, remembers, and lets you know." />
+                </StackPanel>
+
+                <StackPanel Spacing="10">
+                    <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Monitoring" />
+                    <Border Style="{StaticResource SettingsCardStyle}">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Style="{StaticResource CardTitleStyle}" Text="Keep monitoring in the background" />
+                                    <TextBlock
+                                        Style="{StaticResource CardSubtitleStyle}"
+                                        Text="padmon stays in the tray when you close the window, so it can watch for controllers and notify you." />
+                                </StackPanel>
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    Margin="20,0,0,0"
+                                    VerticalAlignment="Center"
+                                    AutomationProperties.Name="Keep monitoring in the background"
+                                    IsOn="{x:Bind ViewModel.BackgroundMonitoring, Mode=TwoWay}"
+                                    OffContent=""
+                                    OnContent="" />
+                            </Grid>
+                            <Border Margin="0,14" Style="{StaticResource DividerStyle}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Style="{StaticResource CardTitleStyle}" Text="Start with Windows" />
+                                    <TextBlock
+                                        Style="{StaticResource CardSubtitleStyle}"
+                                        Text="Launch padmon quietly into the tray when you sign in." />
+                                </StackPanel>
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    Margin="20,0,0,0"
+                                    VerticalAlignment="Center"
+                                    AutomationProperties.Name="Start with Windows"
+                                    IsOn="{x:Bind ViewModel.StartWithWindows, Mode=TwoWay}"
+                                    OffContent=""
+                                    OnContent="" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Spacing="10">
+                    <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Notifications" />
+                    <Border Style="{StaticResource SettingsCardStyle}">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Style="{StaticResource CardTitleStyle}" Text="Controller connected" />
+                                    <TextBlock
+                                        Style="{StaticResource CardSubtitleStyle}"
+                                        Text="Show a Windows notification when a controller connects." />
+                                </StackPanel>
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    Margin="20,0,0,0"
+                                    VerticalAlignment="Center"
+                                    AutomationProperties.Name="Controller connected"
+                                    IsOn="{x:Bind ViewModel.NotifyOnConnect, Mode=TwoWay}"
+                                    OffContent=""
+                                    OnContent="" />
+                            </Grid>
+                            <Border Margin="0,14" Style="{StaticResource DividerStyle}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Style="{StaticResource CardTitleStyle}" Text="Controller disconnected" />
+                                    <TextBlock
+                                        Style="{StaticResource CardSubtitleStyle}"
+                                        Text="Show a Windows notification when a controller disconnects." />
+                                </StackPanel>
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    Margin="20,0,0,0"
+                                    VerticalAlignment="Center"
+                                    AutomationProperties.Name="Controller disconnected"
+                                    IsOn="{x:Bind ViewModel.NotifyOnDisconnect, Mode=TwoWay}"
+                                    OffContent=""
+                                    OnContent="" />
+                            </Grid>
+                            <Border Margin="0,14" Style="{StaticResource DividerStyle}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Style="{StaticResource CardTitleStyle}" Text="Only when padmon is in the background" />
+                                    <TextBlock
+                                        Style="{StaticResource CardSubtitleStyle}"
+                                        Text="Stay quiet while the padmon window is open." />
+                                </StackPanel>
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    Margin="20,0,0,0"
+                                    VerticalAlignment="Center"
+                                    AutomationProperties.Name="Only when padmon is in the background"
+                                    IsOn="{x:Bind ViewModel.NotifyOnlyWhenBackground, Mode=TwoWay}"
+                                    OffContent=""
+                                    OnContent="" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Spacing="10">
+                    <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="History" />
+                    <Border Style="{StaticResource SettingsCardStyle}">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Style="{StaticResource CardTitleStyle}" Text="Keep session history" />
+                                    <TextBlock
+                                        Style="{StaticResource CardSubtitleStyle}"
+                                        Text="Known controllers stay in your list. Session events are pruned after this window." />
+                                </StackPanel>
+                                <ComboBox
+                                    Grid.Column="1"
+                                    MinWidth="140"
+                                    Margin="20,0,0,0"
+                                    VerticalAlignment="Center"
+                                    SelectedIndex="{x:Bind ViewModel.RetentionIndex, Mode=TwoWay}">
+                                    <ComboBoxItem Content="30 days" />
+                                    <ComboBoxItem Content="90 days" />
+                                    <ComboBoxItem Content="1 year" />
+                                    <ComboBoxItem Content="Forever" />
+                                </ComboBox>
+                            </Grid>
+                            <Border Margin="0,14" Style="{StaticResource DividerStyle}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Style="{StaticResource CardTitleStyle}" Text="Clear history" />
+                                    <TextBlock
+                                        Style="{StaticResource CardSubtitleStyle}"
+                                        Text="Remove connection sessions, but keep the controllers you've named." />
+                                </StackPanel>
+                                <Button
+                                    Grid.Column="1"
+                                    Margin="20,0,0,0"
+                                    Click="ClearHistory_Click"
+                                    Content="Clear…" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Spacing="10">
+                    <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Appearance" />
+                    <Border Style="{StaticResource SettingsCardStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="2">
+                                <TextBlock Style="{StaticResource CardTitleStyle}" Text="Theme" />
+                                <TextBlock
+                                    Style="{StaticResource CardSubtitleStyle}"
+                                    Text="Match Windows, or stay in light or dark mode." />
+                            </StackPanel>
+                            <ComboBox
+                                Grid.Column="1"
+                                MinWidth="140"
+                                Margin="20,0,0,0"
+                                VerticalAlignment="Center"
+                                SelectedIndex="{x:Bind ViewModel.ThemeIndex, Mode=TwoWay}">
+                                <ComboBoxItem Content="System" />
+                                <ComboBoxItem Content="Light" />
+                                <ComboBoxItem Content="Dark" />
+                            </ComboBox>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Spacing="10">
+                    <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="About" />
+                    <Border Style="{StaticResource SettingsCardStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="3">
+                                <TextBlock Style="{StaticResource CardTitleStyle}" Text="padmon" />
+                                <TextBlock
+                                    Style="{StaticResource CardSubtitleStyle}"
+                                    Text="A calm controller monitor for Windows 11. Local only. No telemetry." />
+                            </StackPanel>
+                            <StackPanel
+                                Grid.Column="1"
+                                Margin="20,0,0,0"
+                                VerticalAlignment="Center"
+                                Spacing="2">
+                                <TextBlock
+                                    HorizontalAlignment="Right"
+                                    Style="{StaticResource CaptionStyle}"
+                                    Text="0.1.0 preview" />
+                                <TextBlock
+                                    HorizontalAlignment="Right"
+                                    Style="{StaticResource MonoStyle}"
+                                    Text="SDL 3.4.18" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</Page>

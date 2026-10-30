@@ -1,3 +1,13 @@
+# Local toolchain and sandboxed build state
+.appdata/
+.dotnet/
+.dotnet-home/
+.nuget/
+.tmp/
+.tools/
+.scratch/
+*.binlog
+
 # Build output
 bin/
 obj/

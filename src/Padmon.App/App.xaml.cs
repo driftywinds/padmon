@@ -1,0 +1,93 @@
+using System.Diagnostics;
+using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
+using Padmon.Services;
+
+namespace Padmon;
+
+public partial class App : Application
+{
+    public static Window? MainWindow { get; private set; }
+
+    public static AppServices Services { get; private set; } = null!;
+
+    public App()
+    {
+        InitializeComponent();
+    }
+
+    protected override void OnLaunched(LaunchActivatedEventArgs args)
+    {
+        Services = new AppServices(DispatcherQueue.GetForCurrentThread());
+
+        var startHidden = Environment.GetCommandLineArgs()
+            .Any(argument => string.Equals(argument, "--background", StringComparison.OrdinalIgnoreCase));
+
+        MainWindow = new MainWindow();
+        MainWindow.Activate();
+        Services.Notifications.Initialize();
+
+        if (startHidden && MainWindow is MainWindow window)
+        {
+            MainWindow.DispatcherQueue.TryEnqueue(window.HideToTray);
+        }
+
+        _ = StartMonitoringAsync();
+    }
+
+    private static async Task StartMonitoringAsync()
+    {
+        try
+        {
+            Services.Monitor.ControllerConnected += OnControllerConnected;
+            Services.Monitor.ControllerDisconnected += OnControllerDisconnected;
+            await Services.StartAsync();
+
+            if (MainWindow is MainWindow window)
+            {
+                window.ApplyTheme(Services.Settings.Theme);
+            }
+        }
+        catch (Exception exception)
+        {
+            Debug.WriteLine($"padmon input failed to start: {exception}");
+            LogStartupFailure(exception);
+        }
+    }
+
+    private static void OnControllerConnected(object? sender, ViewModels.ControllerViewModel controller)
+    {
+        if (Services.Settings.NotifyOnConnect && ShouldNotify())
+        {
+            Services.Notifications.ShowConnected(controller.DisplayName, controller.Device);
+        }
+    }
+
+    private static void OnControllerDisconnected(object? sender, ViewModels.ControllerViewModel controller)
+    {
+        if (Services.Settings.NotifyOnDisconnect && ShouldNotify())
+        {
+            Services.Notifications.ShowDisconnected(controller.DisplayName, controller.Device);
+        }
+    }
+
+    private static bool ShouldNotify()
+    {
+        return !Services.Settings.NotifyOnlyWhenBackground
+            || App.MainWindow is not MainWindow { IsWindowActive: true };
+    }
+
+    private static void LogStartupFailure(Exception exception)
+    {
+        try
+        {
+            var path = Path.Combine(Path.GetTempPath(), "padmon-startup-error.log");
+            File.AppendAllText(
+                path,
+                $"[{DateTimeOffset.Now:O}]{Environment.NewLine}{exception}{Environment.NewLine}{Environment.NewLine}");
+        }
+        catch
+        {
+        }
+    }
+}

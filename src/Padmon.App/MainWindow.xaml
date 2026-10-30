@@ -1,0 +1,130 @@
+<Window
+    x:Class="Padmon.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="padmon">
+
+    <Grid x:Name="RootGrid" Background="Transparent">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid
+            x:Name="AppTitleBar"
+            Grid.Row="0"
+            Padding="16,0,0,0"
+            Background="Transparent">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel
+                Grid.Column="0"
+                Orientation="Horizontal"
+                Spacing="10"
+                VerticalAlignment="Center">
+                <Border
+                    Width="28"
+                    Height="28"
+                    Background="{ThemeResource AccentFillColorDefaultBrush}"
+                    CornerRadius="9">
+                    <FontIcon
+                        FontSize="14"
+                        Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                        Glyph="&#xE7FC;" />
+                </Border>
+                <TextBlock
+                    VerticalAlignment="Center"
+                    FontFamily="Segoe UI Variable Display"
+                    FontSize="15"
+                    FontWeight="SemiBold"
+                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                    Text="padmon" />
+                <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                    Text="controller monitor" />
+            </StackPanel>
+
+            <StackPanel
+                Grid.Column="2"
+                Margin="0,0,150,0"
+                Orientation="Horizontal"
+                Spacing="8"
+                VerticalAlignment="Center"
+                IsHitTestVisible="False">
+                <Border
+                    Padding="10,4"
+                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                    CornerRadius="12">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Ellipse
+                            x:Name="MonitorDot"
+                            Width="7"
+                            Height="7"
+                            VerticalAlignment="Center"
+                            Fill="{ThemeResource SystemFillColorSuccessBrush}" />
+                        <TextBlock
+                            x:Name="MonitorStatusText"
+                            FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="Watching" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+
+        <NavigationView
+            x:Name="Navigation"
+            Grid.Row="1"
+            Background="Transparent"
+            CompactPaneLength="52"
+            IsBackButtonVisible="Collapsed"
+            IsPaneOpen="True"
+            IsPaneToggleButtonVisible="False"
+            IsSettingsVisible="False"
+            OpenPaneLength="220"
+            PaneDisplayMode="Left"
+            SelectionChanged="Navigation_SelectionChanged">
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="Controllers" Tag="controllers">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7FC;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="History" Tag="history">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE81C;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="Settings" Tag="settings">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE713;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+
+            <NavigationView.PaneFooter>
+                <StackPanel Margin="12,8,12,12" Spacing="2">
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                        Text="padmon preview" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                        Text="SDL3 · local only" />
+                </StackPanel>
+            </NavigationView.PaneFooter>
+
+            <Frame x:Name="ContentFrame" />
+        </NavigationView>
+    </Grid>
+</Window>

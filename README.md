@@ -4,29 +4,87 @@
 
 It is deliberately **not** a controller configuration suite. There are no remaps, macros, deadzone editors, or per-game profiles. The job is to make controllers visible, understandable, and pleasant to keep track of.
 
-## Product principles
+![padmon controllers view](docs/images/controllers.png)
 
-1. **UI first.** padmon should feel like a polished Windows utility: calm, fast, legible, and at home in Windows 11. Every state — empty, loading, connected, disconnected, unknown device — deserves a considered design.
-2. **Monitoring, not configuration.** Read devices, present them clearly, and remember them. Do not turn into a tinkering tool.
-3. **Broad device support.** Xbox and PlayStation pads are the baseline, not the boundary. Generic USB/Bluetooth gamepads, fight sticks, wheels, and unusual controllers should work wherever the underlying input stack can expose them.
-4. **Names are personal.** A controller can be renamed inside padmon, and that name is used everywhere the app refers to it, including notifications.
-5. **Background when asked.** padmon can stay running in the tray to watch for connections and disconnections, and it should be obvious when it is doing so.
-6. **No surprises.** No telemetry, no cloud account, no driver installation, no background process the user did not opt into.
+## What is in the working preview
 
-## Planned capabilities
+- SDL3 controller discovery and hotplug monitoring on Windows 11.
+- Xbox, PlayStation, Switch, 8BitDo, GameSir, EasySMX, and generic controllers through SDL's gamepad mappings, with raw joystick fallback for unrecognized devices.
+- A persistent local catalogue of controllers, including first-seen, last-seen, and session count.
+- New/known device handling, battery and transport information where the device exposes it.
+- App-level renaming that uses the chosen name throughout the UI and notifications.
+- A live tester with buttons, sticks, triggers, shoulders, hats, and raw axis values.
+- A tray-resident background mode, close-to-tray behavior, and opt-in start with Windows.
+- Windows notifications for connect/disconnect, with a tray-balloon fallback when the modern notification API is unavailable.
+- SQLite history with retention settings; no cloud, telemetry, or account.
 
-- A live list of connected controllers, including connection type and available battery information.
-- A persistent catalogue of controllers that have been seen before, with first-seen and last-seen history.
-- New-device and returning-device identification, so a previously connected pad is recognised as familiar.
-- App-level renaming, with Windows notifications that use the chosen name.
-- A quick, read-only input tester: buttons, sticks, triggers, shoulders, hats, and other exposed controls.
-- A tray-resident monitoring mode with an opt-in start-with-Windows setting.
-- Graceful handling of controllers that cannot be fully identified or mapped.
+## Requirements
 
-## Status
+- Windows 11 22H2 or newer.
+- .NET 10 SDK. The repo installs a local SDK into `.dotnet` so it does not depend on a machine-wide SDK.
+- Windows App SDK 2.6.4 (restored through NuGet).
+- SDL 3.4.18 native binaries (restored through `SDL3-CS.Windows`).
 
-Planning. The UI framework, packaging model, and background-monitoring architecture are being decided before implementation begins.
+## Build and run
 
-## Name
+```powershell
+# First time only: install the local .NET 10 SDK
+pwsh tools/install-dotnet.ps1
 
-The product is **padmon** (lowercase in user-facing copy). C# namespaces and project names use `Padmon` where language conventions require it.
+# Build the solution
+pwsh tools/build.ps1
+
+# Run the app
+pwsh tools/run.ps1
+```
+
+The direct SDK wrapper is `eng/dotnet.ps1`:
+
+```powershell
+.\eng\dotnet.ps1 build Padmon.sln --configuration Debug --property:Platform=x64
+```
+
+If the build is run inside a restricted environment, the wrapper keeps NuGet caches, temp files, and the SDK under the repository so it does not need the user profile. In a normal desktop session the standard `.NET` CLI can also be used after installing the SDK.
+
+## Development helpers
+
+```powershell
+# Run with a simulated controller (Debug builds only)
+pwsh tools/run.ps1 -Simulate
+
+# Start hidden in the tray, as the login startup path does
+pwsh tools/run.ps1 -Background
+
+# Use an isolated data directory for experiments
+$env:PADMON_DATA_DIR = 'W:\repos\padmon\.tmp\padmon-data'
+```
+
+`PADMON_SIMULATE_FLAP=1` makes the simulator disconnect and reconnect periodically so notification and tray behavior can be exercised without hardware.
+
+The app icon and tray icon are generated from `tools/generate-icon.py` (Pillow).
+
+## Data and privacy
+
+Everything stays local:
+
+- `%LOCALAPPDATA%\padmon\padmon.db` — controller catalogue and connection sessions.
+- `%LOCALAPPDATA%\padmon\settings.json` — app preferences.
+- `%LOCALAPPDATA%\padmon\logs` — reserved for diagnostics.
+
+`PADMON_DATA_DIR` overrides the data directory for development or portable experiments.
+
+## Architecture
+
+- `src/Padmon.App` — WinUI 3 shell, pages, view models, tray, notifications.
+- `src/Padmon.Core` — controller domain models, settings, SQLite history.
+- `src/Padmon.Input` — SDL3 controller source on a dedicated background thread.
+
+See [docs/architecture.md](docs/architecture.md) for the details.
+
+## Known limits and next steps
+
+- The controller support matrix still needs real-hardware verification. The current test set is GameSir Cyclone 2, EasySMX X20, an original Xbox One controller, and an older PowerA controller.
+- Controllers without serial numbers and without a PnP container ID may share a model fingerprint; that is shown as a model-level identity rather than pretending per-unit identity.
+- The modern Windows App SDK notification path is implemented, with a tray-balloon fallback. It needs a real interactive user session for final verification.
+- Single-instance behavior and a graceful “forget controller” flow are good next additions.
+- There is intentionally no MSIX packaging. Release packaging can be a portable self-contained folder first and MSIX later if the distribution story calls for it.
