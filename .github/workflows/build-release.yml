@@ -49,6 +49,14 @@ jobs:
           --property:UseSharedCompilation=false
           --output artifacts/padmon-win-x64
 
+      - name: Verify published app
+        shell: pwsh
+        run: |
+          $exe = "artifacts/padmon-win-x64/Padmon.exe"
+          $pri = "artifacts/padmon-win-x64/Padmon.pri"
+          if (-not (Test-Path $exe)) { throw "Missing $exe" }
+          if (-not (Test-Path $pri)) { throw "Missing $pri (WinUI resources are required at startup)" }
+
       - name: Add README to the portable artifact
         shell: pwsh
         run: Copy-Item README.md artifacts/padmon-win-x64/README.md

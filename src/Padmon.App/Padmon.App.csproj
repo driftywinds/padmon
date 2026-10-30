@@ -34,4 +34,12 @@
     <Content Include="Assets\padmon-tray.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <Target Name="CopyWinUIPriToPublish" AfterTargets="Publish">
+    <Copy
+      SourceFiles="$(TargetDir)Padmon.pri"
+      DestinationFolder="$(PublishDir)"
+      SkipUnchangedFiles="true"
+      Condition="Exists('$(TargetDir)Padmon.pri')" />
+  </Target>
+
 </Project>
