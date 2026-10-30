@@ -7,7 +7,7 @@
     mc:Ignorable="d"
     Title="padmon">
 
-    <Grid x:Name="RootGrid" Background="Transparent">
+    <Grid x:Name="RootGrid" Background="{ThemeResource PadmonWindowBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="48" />
             <RowDefinition Height="*" />

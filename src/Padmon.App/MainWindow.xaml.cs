@@ -1,10 +1,8 @@
 using System.Collections.Specialized;
 using Microsoft.UI;
-using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
 using Padmon.Core.Diagnostics;
 using Padmon.Services;
 using Padmon.Views;
@@ -25,7 +23,6 @@ public sealed partial class MainWindow : Window, IDisposable
     {
         InitializeComponent();
 
-        SystemBackdrop = new MicaBackdrop { Kind = MicaKind.BaseAlt };
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
 
@@ -33,6 +30,11 @@ public sealed partial class MainWindow : Window, IDisposable
         AppWindow.Resize(new SizeInt32(1180, 760));
         AppWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
         AppWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
+
+        if (AppWindow.Presenter is OverlappedPresenter presenter)
+        {
+            presenter.IsAlwaysOnTop = false;
+        }
 
         Navigation.SelectedItem = Navigation.MenuItems[0];
         ContentFrame.Navigate(typeof(ControllersPage));

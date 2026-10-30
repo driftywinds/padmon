@@ -127,9 +127,9 @@ public sealed partial class ControllerDetailPage : Page
 
         var available = await App.Services.Monitor.RumbleAsync(
             _controller.StableKey,
-            0.7f,
-            0.7f,
-            TimeSpan.FromMilliseconds(350));
+            1f,
+            1f,
+            TimeSpan.FromMilliseconds(600));
 
         RumbleBar.IsOpen = !available;
     }
