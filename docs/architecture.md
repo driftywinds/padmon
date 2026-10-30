@@ -54,8 +54,8 @@ Framework-agnostic models and persistence.
 - `HistoryPage` shows known controllers and recent sessions.
 - `SettingsPage` edits background monitoring, notifications, retention, startup, and theme.
 - `TrayIconService` is a small Win32 `Shell_NotifyIcon` implementation, deliberately avoiding a third-party tray control tied to an older Windows App SDK.
-- `NotificationService` has an opt-in native mode. It tries the Windows App SDK `AppNotificationManager`, then `DesktopToastService`, which installs a Start Menu shortcut with an AppUserModelID and raises a `ToastNotification` through `ToastNotificationManager`. If both fail, it falls back to a tray balloon, then an in-app notification card. The default is the in-app card. The fallback also covers restricted/low-integrity sessions where the Windows shell rejects tray and toast registration.
-- `DesktopToastService` is the native Action Center path for the unpackaged build. It requires a normal-integrity desktop session; a Start Menu shortcut named `padmon` is created/updated automatically.
+- `NotificationService` has an opt-in Windows tray notification mode. It uses the same `Shell_NotifyIcon` balloon path as the tray icon, so it does not need elevation. The default is the in-app card; if the tray is unavailable, the in-app card is used.
+- The in-app notification card remains the fallback for restricted sessions where the shell tray is unavailable.
 - The controller card exposes a `More information` dialog with identity, transport, mapping, history, and live-sample counts.
 
 ## Background model

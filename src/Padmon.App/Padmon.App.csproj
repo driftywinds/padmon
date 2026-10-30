@@ -30,27 +30,6 @@
     <ProjectReference Include="..\Padmon.Input\Padmon.Input.csproj" SkipGetTargetFrameworkProperties="true" />
   </ItemGroup>
 
-  <Target Name="BuildToastHelper" BeforeTargets="Build">
-    <MSBuild
-      Projects="$(MSBuildThisFileDirectory)..\Padmon.Toast\Padmon.Toast.csproj"
-      Targets="Build"
-      Properties="Configuration=$(Configuration);Platform=$(Platform)" />
-  </Target>
-
-  <Target Name="CopyToastHelper" AfterTargets="Build">
-    <ItemGroup>
-      <ToastHelperFiles Include="$(MSBuildThisFileDirectory)..\Padmon.Toast\bin\$(Platform)\$(Configuration)\net10.0-windows10.0.22621.0\win-x64\*" />
-    </ItemGroup>
-    <Copy SourceFiles="@(ToastHelperFiles)" DestinationFolder="$(OutDir)toast" SkipUnchangedFiles="true" />
-  </Target>
-
-  <Target Name="CopyToastHelperToPublish" AfterTargets="Publish">
-    <ItemGroup>
-      <ToastHelperPublishFiles Include="$(MSBuildThisFileDirectory)..\Padmon.Toast\bin\$(Platform)\$(Configuration)\net10.0-windows10.0.22621.0\win-x64\*" />
-    </ItemGroup>
-    <Copy SourceFiles="@(ToastHelperPublishFiles)" DestinationFolder="$(PublishDir)toast" SkipUnchangedFiles="true" />
-  </Target>
-
   <ItemGroup>
     <Content Include="Assets\padmon-tray.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

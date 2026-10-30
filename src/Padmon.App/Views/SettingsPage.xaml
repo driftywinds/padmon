@@ -143,7 +143,7 @@
                                     <TextBlock Style="{StaticResource CardTitleStyle}" Text="Native Windows notifications" />
                                     <TextBlock
                                         Style="{StaticResource CardSubtitleStyle}"
-                                        Text="Use Windows 11 Action Center toasts instead of padmon's in-app cards. Falls back to in-app if Windows blocks the notification." />
+                                        Text="Show the shell's bottom-right notification instead of the in-app card. Works without administrator rights; falls back to in-app if the tray is unavailable." />
                                 </StackPanel>
                                 <ToggleSwitch
                                     Grid.Column="1"

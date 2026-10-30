@@ -3,7 +3,6 @@ using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Padmon.Core.Diagnostics;
 using Padmon.Services;
 using Padmon.Views;
 using Windows.Graphics;
@@ -102,17 +101,9 @@ public sealed partial class MainWindow : Window, IDisposable
             ExitFromTray);
 
         _trayIcon.Create();
-        App.Services.Notifications.SetFallback((title, body) =>
-        {
-            if (_trayIcon.ShowBalloon(title, body))
-            {
-                return true;
-            }
-
-            PadmonLog.Info($"showing in-app notification: {title}");
-            ShowInAppNotification(title, body);
-            return false;
-        });
+        App.Services.Notifications.SetFallback(
+            _trayIcon.ShowBalloon,
+            ShowInAppNotification);
         UpdateTrayToolTip();
     }
 

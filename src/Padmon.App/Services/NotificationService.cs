@@ -1,6 +1,3 @@
-using System.Diagnostics;
-using Microsoft.Windows.AppNotifications;
-using Microsoft.Windows.AppNotifications.Builder;
 using Padmon.Core.Devices;
 using Padmon.Core.Diagnostics;
 
@@ -9,77 +6,22 @@ namespace Padmon.Services;
 public enum NotificationDeliveryKind
 {
     InApp,
-    Tray,
-    Native
+    Tray
 }
 
 public sealed class NotificationService : IDisposable
 {
-    private bool _registered;
-    private bool _preferNative;
-    private Func<string, string, bool>? _fallback;
+    private Func<string, string, bool>? _trayFallback;
+    private Action<string, string>? _inAppFallback;
 
-    public bool PreferNative
+    public bool PreferNative { get; set; }
+
+    public void SetFallback(
+        Func<string, string, bool> trayFallback,
+        Action<string, string> inAppFallback)
     {
-        get => _preferNative;
-        set
-        {
-            _preferNative = value;
-
-            if (value)
-            {
-                Initialize();
-            }
-        }
-    }
-
-    public void Initialize()
-    {
-        // Native toasts go through DesktopToastService first; the Windows App SDK
-        // manager is only registered lazily if that path is unavailable, because
-        // registering it up front can replace the process AUMID.
-        DesktopToastService.Prepare();
-    }
-
-    private void EnsureAppSdkRegistered()
-    {
-        if (_registered)
-        {
-            return;
-        }
-
-        try
-        {
-            AppNotificationManager.Default.NotificationInvoked += OnNotificationInvoked;
-            AppNotificationManager.Default.Register();
-            _registered = true;
-            PadmonLog.Info("app notification manager registered");
-        }
-        catch (Exception exception)
-        {
-            Debug.WriteLine($"padmon notifications are unavailable: {exception}");
-            PadmonLog.Error("app notification manager unavailable; using tray fallback", exception);
-            LogFailure(exception);
-        }
-    }
-
-    private static void LogFailure(Exception exception)
-    {
-        try
-        {
-            var path = Path.Combine(Path.GetTempPath(), "padmon-notification-error.log");
-            File.AppendAllText(
-                path,
-                $"[{DateTimeOffset.Now:O}]{Environment.NewLine}{exception}{Environment.NewLine}{Environment.NewLine}");
-        }
-        catch
-        {
-        }
-    }
-
-    public void SetFallback(Func<string, string, bool> fallback)
-    {
-        _fallback = fallback;
+        _trayFallback = trayFallback;
+        _inAppFallback = inAppFallback;
     }
 
     public void ShowConnected(string displayName, ControllerDevice device)
@@ -87,13 +29,13 @@ public sealed class NotificationService : IDisposable
         var title = $"{displayName} connected";
         var body = $"{Describe(device)} · padmon is watching";
 
-        if (PreferNative && TryShowNative(title, body))
+        if (PreferNative && TryShowTray(title, body))
         {
             return;
         }
 
-        PadmonLog.Info($"notification fallback: {title}");
-        _ = _fallback?.Invoke(title, body);
+        PadmonLog.Info($"showing in-app notification: {title}");
+        _inAppFallback?.Invoke(title, body);
     }
 
     public void ShowDisconnected(string displayName, ControllerDevice device)
@@ -101,13 +43,13 @@ public sealed class NotificationService : IDisposable
         var title = $"{displayName} disconnected";
         var body = $"{Describe(device)} · still watching";
 
-        if (PreferNative && TryShowNative(title, body))
+        if (PreferNative && TryShowTray(title, body))
         {
             return;
         }
 
-        PadmonLog.Info($"notification fallback: {title}");
-        _ = _fallback?.Invoke(title, body);
+        PadmonLog.Info($"showing in-app notification: {title}");
+        _inAppFallback?.Invoke(title, body);
     }
 
     public NotificationDeliveryKind ShowTest()
@@ -115,78 +57,29 @@ public sealed class NotificationService : IDisposable
         const string title = "padmon notification test";
         const string body = "If you can see this, notifications are working.";
 
-        if (PreferNative && TryShowNative(title, body))
+        if (PreferNative && TryShowTray(title, body))
         {
-            return NotificationDeliveryKind.Native;
+            return NotificationDeliveryKind.Tray;
         }
 
-        var tray = _fallback?.Invoke(title, body) ?? false;
-        return tray ? NotificationDeliveryKind.Tray : NotificationDeliveryKind.InApp;
-    }
-
-    private bool TryShowNative(string title, string body)
-    {
-        if (ElevatedToastRelay.IsElevated())
-        {
-            // Windows silently drops notifications from elevated processes.
-            // Relay to a normal-integrity helper instead.
-            PadmonLog.Info("elevated notification path: relaying toast");
-            return ElevatedToastRelay.TryShow(title, body);
-        }
-
-        if (DesktopToastService.TryShow(title, body))
-        {
-            return true;
-        }
-
-        PadmonLog.Info("desktop toast path unavailable; trying Windows App SDK notification path");
-        EnsureAppSdkRegistered();
-        return TryShow(title, body);
+        _inAppFallback?.Invoke(title, body);
+        return NotificationDeliveryKind.InApp;
     }
 
     public void Dispose()
     {
-        if (!_registered)
-        {
-            return;
-        }
-
-        try
-        {
-            AppNotificationManager.Default.NotificationInvoked -= OnNotificationInvoked;
-            AppNotificationManager.Default.Unregister();
-        }
-        catch (Exception exception)
-        {
-            Debug.WriteLine($"padmon notification cleanup failed: {exception}");
-        }
-
-        _registered = false;
     }
 
-    private bool TryShow(string title, string body)
+    private bool TryShowTray(string title, string body)
     {
-        if (!_registered)
+        if (_trayFallback?.Invoke(title, body) == true)
         {
-            return false;
-        }
-
-        try
-        {
-            var notification = new AppNotificationBuilder()
-                .AddArgument("action", "open")
-                .AddText(title)
-                .AddText(body)
-                .BuildNotification();
-
-            AppNotificationManager.Default.Show(notification);
+            PadmonLog.Info($"tray notification shown: {title}");
             return true;
         }
-        catch (Exception exception)
-        {
-            Debug.WriteLine($"padmon notification failed: {exception}");
-            return false;
-        }
+
+        PadmonLog.Info($"tray notification unavailable: {title}");
+        return false;
     }
 
     private static string Describe(ControllerDevice device)
@@ -215,21 +108,5 @@ public sealed class NotificationService : IDisposable
         };
 
         return connection is null ? kind : $"{kind} · {connection}";
-    }
-
-    private static void OnNotificationInvoked(
-        AppNotificationManager sender,
-        AppNotificationActivatedEventArgs args)
-    {
-        if (App.MainWindow is null)
-        {
-            return;
-        }
-
-        App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-        {
-            App.MainWindow.AppWindow.Show();
-            App.MainWindow.Activate();
-        });
     }
 }

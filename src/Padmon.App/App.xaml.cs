@@ -30,8 +30,6 @@ public partial class App : Application
             return;
         }
 
-        DesktopToastService.Initialize();
-
         Services = new AppServices(DispatcherQueue.GetForCurrentThread());
 
         var startHidden = Environment.GetCommandLineArgs()
@@ -39,7 +37,6 @@ public partial class App : Application
 
         MainWindow = new MainWindow();
         MainWindow.Activate();
-        Services.Notifications.Initialize();
 
         if (startHidden && MainWindow is MainWindow window)
         {

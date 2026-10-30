@@ -21,17 +21,11 @@ public sealed partial class SettingsPage : Page
         var nativeRequested = App.Services.Notifications.PreferNative;
         var delivery = App.Services.Notifications.ShowTest();
 
-        ViewModel.NotificationTestStatus = delivery switch
-        {
-            NotificationDeliveryKind.Native =>
-                "Sent as a native Windows notification. Check the bottom-right corner and Notification Center.",
-            NotificationDeliveryKind.Tray when nativeRequested =>
-                "Windows blocked the native toast; padmon showed a tray balloon instead. A tray balloon is not stored in Notification Center. Check the padmon.log native toast line for the exact reason.",
-            NotificationDeliveryKind.Tray =>
-                "Sent as a tray balloon. Enable native notifications to use the Windows notification system and Notification Center.",
-            _ =>
-                "Windows blocked the native toast and no tray icon was available; padmon used the in-app card."
-        };
+        ViewModel.NotificationTestStatus = !nativeRequested
+            ? "Sent as an in-app card. Enable Windows notifications to use the shell notification instead."
+            : delivery == NotificationDeliveryKind.Tray
+                ? "Shown as a Windows tray notification in the bottom-right corner. No administrator rights are required."
+                : "The Windows tray notification could not be created; padmon used the in-app card.";
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
