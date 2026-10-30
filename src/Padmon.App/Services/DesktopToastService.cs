@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.Win32;
 using Padmon.Core.Diagnostics;
 using Windows.Data.Xml.Dom;
 using Windows.UI.Notifications;
@@ -8,14 +9,18 @@ using Windows.UI.Notifications;
 namespace Padmon.Services;
 
 /// <summary>
-/// Native Windows toast path for an unpackaged desktop app. Windows requires a
-/// Start Menu shortcut carrying an AppUserModelID before it will accept an
-/// explicit-AUMID toast. This is the documented desktop-app path; the Windows
-/// App SDK AppNotificationManager is tried first.
+/// Native Windows toast path for an unpackaged desktop app. Windows only shows
+/// toasts for an AppUserModelID it knows about, so this registers the AUMID in
+/// HKCU (the reliable path, no timing dependency) and also stamps it onto a
+/// Start Menu shortcut. Toasts are always sent through an explicit-AUMID
+/// notifier so they do not depend on whichever AUMID the process ended up with.
 /// </summary>
 internal static class DesktopToastService
 {
     private const string Aumid = "Padmon.ControllerMonitor";
+    private const string DisplayName = "padmon";
+    private const ushort VtLpwstr = 31;
+
     private static readonly Guid GuidAppUserModel = new("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3");
     private static readonly string ShortcutPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -25,17 +30,39 @@ internal static class DesktopToastService
         "Programs",
         "padmon.lnk");
 
+    private static readonly object Sync = new();
+    private static bool _prepared;
+    private static ToastNotification? _lastToast; // keep alive so events still fire
+
     public static void Initialize()
     {
         var result = SetCurrentProcessExplicitAppUserModelID(Aumid);
-        PadmonLog.Info($"native desktop toast AUMID initialized: result={result}");
+        PadmonLog.Info($"native desktop toast AUMID initialized: result=0x{result:X8}");
+        Prepare();
+    }
+
+    /// <summary>Registers the AUMID and shortcut once per process.</summary>
+    public static bool Prepare()
+    {
+        lock (Sync)
+        {
+            if (_prepared)
+            {
+                return true;
+            }
+
+            var registered = RegisterAumid();
+            var shortcut = EnsureShortcut();
+            _prepared = registered || shortcut;
+            return _prepared;
+        }
     }
 
     public static bool TryShow(string title, string body)
     {
         try
         {
-            if (!EnsureShortcut())
+            if (!Prepare())
             {
                 return false;
             }
@@ -53,25 +80,29 @@ internal static class DesktopToastService
 </toast>
 """);
 
-            var processAumidResult = SetCurrentProcessExplicitAppUserModelID(Aumid);
-            PadmonLog.Info($"native desktop toast process AUMID result={processAumidResult}");
+            var notifier = ToastNotificationManager.CreateToastNotifier(Aumid);
+            var setting = notifier.Setting;
+            PadmonLog.Info($"native desktop toast notifier setting={setting}");
 
-            ToastNotifier notifier;
-
-            try
+            if (setting != NotificationSetting.Enabled)
             {
-                notifier = ToastNotificationManager.CreateToastNotifier();
-            }
-            catch
-            {
-                notifier = ToastNotificationManager.CreateToastNotifier(Aumid);
+                PadmonLog.Warn(
+                    $"native desktop toast blocked by Windows ({setting}); check Settings > System > Notifications, Focus/Do Not Disturb, and group policy");
+                return false;
             }
 
-            notifier.Show(new ToastNotification(xml)
+            var toast = new ToastNotification(xml)
             {
                 Tag = "padmon-controller",
                 Group = "padmon"
-            });
+            };
+
+            toast.Activated += (_, _) => BringToFront();
+            toast.Failed += (_, args) =>
+                PadmonLog.Error($"native desktop toast failed to display: 0x{args.ErrorCode?.HResult ?? 0:X8}", args.ErrorCode);
+
+            _lastToast = toast;
+            notifier.Show(toast);
 
             PadmonLog.Info("native desktop toast shown");
             return true;
@@ -79,6 +110,43 @@ internal static class DesktopToastService
         catch (Exception exception)
         {
             PadmonLog.Error("native desktop toast failed", exception);
+            return false;
+        }
+    }
+
+    private static void BringToFront()
+    {
+        App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
+        {
+            App.MainWindow.AppWindow.Show();
+            App.MainWindow.Activate();
+        });
+    }
+
+    private static bool RegisterAumid()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.CreateSubKey($@"Software\Classes\AppUserModelId\{Aumid}");
+            key.SetValue("DisplayName", DisplayName, RegistryValueKind.String);
+
+            var icon = new[]
+            {
+                Path.Combine(AppContext.BaseDirectory, "Assets", "padmon.png"),
+                Path.Combine(AppContext.BaseDirectory, "Assets", "padmon-tray.ico")
+            }.FirstOrDefault(File.Exists);
+
+            if (icon is not null)
+            {
+                key.SetValue("IconUri", icon, RegistryValueKind.String);
+            }
+
+            PadmonLog.Info($"native desktop toast AUMID registered in HKCU (icon={icon ?? "none"})");
+            return true;
+        }
+        catch (Exception exception)
+        {
+            PadmonLog.Error("native desktop toast AUMID registry registration failed", exception);
             return false;
         }
     }
@@ -94,13 +162,48 @@ internal static class DesktopToastService
             return false;
         }
 
-        var temporaryShortcut = Path.Combine(Path.GetTempPath(), "padmon-aumid.lnk");
-
         try
         {
-            CreateShortcut(temporaryShortcut, executable, Aumid);
             Directory.CreateDirectory(Path.GetDirectoryName(ShortcutPath)!);
-            File.Copy(temporaryShortcut, ShortcutPath, true);
+
+            var link = (IShellLinkW)new ShellLink();
+            var persist = (IPersistFile)link;
+            var store = (IPropertyStore)link;
+            var exists = File.Exists(ShortcutPath);
+
+            if (exists)
+            {
+                // Keep a shortcut the user already made (target, arguments);
+                // only stamp the AUMID onto it.
+                persist.Load(ShortcutPath, 0);
+
+                if (ReadAumid(store) == Aumid)
+                {
+                    PadmonLog.Info($"native desktop toast shortcut already has AUMID: {ShortcutPath}");
+                    return true;
+                }
+
+                var target = new StringBuilder(520);
+                link.GetPath(target, target.Capacity, IntPtr.Zero, 0);
+
+                if (!File.Exists(target.ToString()))
+                {
+                    link.SetPath(executable);
+                    link.SetWorkingDirectory(Path.GetDirectoryName(executable)!);
+                }
+            }
+            else
+            {
+                link.SetPath(executable);
+                link.SetWorkingDirectory(Path.GetDirectoryName(executable)!);
+                link.SetArguments("");
+                link.SetDescription("padmon controller monitor");
+                link.SetIconLocation(executable, 0);
+            }
+
+            WriteAumid(store, Aumid);
+            store.Commit();
+            persist.Save(ShortcutPath, true);
             SHChangeNotify(ShcneAssocChanged, 0, IntPtr.Zero, IntPtr.Zero);
             PadmonLog.Info($"native desktop toast shortcut installed: {ShortcutPath}");
             return true;
@@ -108,55 +211,44 @@ internal static class DesktopToastService
         catch (Exception exception)
         {
             PadmonLog.Error("native desktop toast shortcut install failed", exception);
-
-            if (File.Exists(ShortcutPath))
-            {
-                PadmonLog.Info($"using existing native desktop toast shortcut: {ShortcutPath}");
-                return true;
-            }
-
-            return false;
-        }
-        finally
-        {
-            try
-            {
-                File.Delete(temporaryShortcut);
-            }
-            catch
-            {
-            }
+            return File.Exists(ShortcutPath);
         }
     }
 
-    private static void CreateShortcut(string path, string target, string appUserModelId)
+    private static string? ReadAumid(IPropertyStore store)
     {
-        var link = (IShellLinkW)new ShellLink();
-        link.SetPath(target);
-        link.SetWorkingDirectory(Path.GetDirectoryName(target)!);
-        link.SetArguments("");
-        link.SetDescription("padmon controller monitor");
-        link.SetIconLocation(target, 0);
+        var key = new PropertyKey(GuidAppUserModel, 5);
+        store.GetValue(ref key, out var value);
 
-        var store = (IPropertyStore)link;
+        try
+        {
+            return value.vt == VtLpwstr && value.pointerValue != IntPtr.Zero
+                ? Marshal.PtrToStringUni(value.pointerValue)
+                : null;
+        }
+        finally
+        {
+            _ = PropVariantClear(ref value);
+        }
+    }
+
+    private static void WriteAumid(IPropertyStore store, string appUserModelId)
+    {
         var key = new PropertyKey(GuidAppUserModel, 5);
         var value = new PropVariant
         {
-            vt = 31,
+            vt = VtLpwstr,
             pointerValue = Marshal.StringToCoTaskMemUni(appUserModelId)
         };
 
         try
         {
             store.SetValue(ref key, ref value);
-            store.Commit();
         }
         finally
         {
             _ = PropVariantClear(ref value);
         }
-
-        ((IPersistFile)link).Save(path, true);
     }
 
     private static string Escape(string value) =>
@@ -246,7 +338,7 @@ internal static class DesktopToastService
         }
     }
 
-    [StructLayout(LayoutKind.Explicit)]
+    [StructLayout(LayoutKind.Explicit, Size = 24)] // PROPVARIANT is 24 bytes on x64
     private struct PropVariant
     {
         [FieldOffset(0)]

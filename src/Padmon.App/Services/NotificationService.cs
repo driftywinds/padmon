@@ -28,6 +28,14 @@ public sealed class NotificationService : IDisposable
 
     public void Initialize()
     {
+        // Native toasts go through DesktopToastService first; the Windows App SDK
+        // manager is only registered lazily if that path is unavailable, because
+        // registering it up front can replace the process AUMID.
+        DesktopToastService.Prepare();
+    }
+
+    private void EnsureAppSdkRegistered()
+    {
         if (_registered)
         {
             return;
@@ -111,13 +119,14 @@ public sealed class NotificationService : IDisposable
 
     private bool TryShowNative(string title, string body)
     {
-        if (TryShow(title, body))
+        if (DesktopToastService.TryShow(title, body))
         {
             return true;
         }
 
-        PadmonLog.Info("modern notification path unavailable; trying desktop toast path");
-        return DesktopToastService.TryShow(title, body);
+        PadmonLog.Info("desktop toast path unavailable; trying Windows App SDK notification path");
+        EnsureAppSdkRegistered();
+        return TryShow(title, body);
     }
 
     public void Dispose()
