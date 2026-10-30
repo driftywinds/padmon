@@ -22,6 +22,7 @@ public partial class App : Application
     {
         PadmonLog.Initialize(Path.Combine(PadmonPaths.LogsDirectory, "padmon.log"));
         PadmonLog.Info($"launched: {string.Join(' ', Environment.GetCommandLineArgs())}");
+        DesktopToastService.Initialize();
 
         Services = new AppServices(DispatcherQueue.GetForCurrentThread());
 

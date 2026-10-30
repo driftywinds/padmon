@@ -25,6 +25,12 @@ internal static class DesktopToastService
         "Programs",
         "padmon.lnk");
 
+    public static void Initialize()
+    {
+        var result = SetCurrentProcessExplicitAppUserModelID(Aumid);
+        PadmonLog.Info($"native desktop toast AUMID initialized: result={result}");
+    }
+
     public static bool TryShow(string title, string body)
     {
         try
