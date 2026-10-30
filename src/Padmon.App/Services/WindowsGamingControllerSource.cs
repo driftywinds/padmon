@@ -175,7 +175,9 @@ public sealed class WindowsGamingControllerSource : IControllerSource, IAsyncDis
             var vibration = new GamepadVibration
             {
                 LeftMotor = Math.Clamp(lowFrequency, 0f, 1f),
-                RightMotor = Math.Clamp(highFrequency, 0f, 1f)
+                RightMotor = Math.Clamp(highFrequency, 0f, 1f),
+                LeftTrigger = Math.Clamp(lowFrequency, 0f, 1f),
+                RightTrigger = Math.Clamp(highFrequency, 0f, 1f)
             };
 
             var end = DateTimeOffset.UtcNow + duration;
