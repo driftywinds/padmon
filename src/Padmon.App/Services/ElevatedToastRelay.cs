@@ -45,11 +45,7 @@ internal static class ElevatedToastRelay
         var executable = Path.Combine(AppContext.BaseDirectory, "toast", "Padmon.Toast.exe");
         if (!File.Exists(executable))
         {
-            executable = Environment.ProcessPath ?? string.Empty;
-        }
-
-        if (string.IsNullOrWhiteSpace(executable) || !File.Exists(executable))
-        {
+            PadmonLog.Info($"elevated toast relay: helper missing at {executable}");
             return false;
         }
 
