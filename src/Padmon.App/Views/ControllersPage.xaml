@@ -140,9 +140,12 @@
                                                 Spacing="3">
                                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                                     <TextBlock
+                                                        MaxLines="1"
+                                                        MaxWidth="210"
                                                         VerticalAlignment="Center"
                                                         Style="{StaticResource CardTitleStyle}"
-                                                        Text="{x:Bind DisplayName, Mode=OneWay}" />
+                                                        Text="{x:Bind DisplayName, Mode=OneWay}"
+                                                        TextTrimming="CharacterEllipsis" />
                                                     <Border
                                                         Padding="7,2"
                                                         VerticalAlignment="Center"
@@ -157,8 +160,10 @@
                                                     </Border>
                                                 </StackPanel>
                                                 <TextBlock
+                                                    MaxLines="1"
                                                     Style="{StaticResource CardSubtitleStyle}"
-                                                    Text="{x:Bind Subtitle, Mode=OneWay}" />
+                                                    Text="{x:Bind Subtitle, Mode=OneWay}"
+                                                    TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
 
                                             <StackPanel
@@ -178,7 +183,8 @@
                                                     Padding="9,4"
                                                     VerticalAlignment="Center"
                                                     Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                                    CornerRadius="10">
+                                                    CornerRadius="10"
+                                                    Visibility="{x:Bind HasBattery, Converter={StaticResource BooleanToVisibilityConverter}}">
                                                     <TextBlock
                                                         Style="{StaticResource PillTextStyle}"
                                                         Text="{x:Bind BatteryLabel, Mode=OneWay}" />
@@ -196,9 +202,11 @@
                                             <StackPanel Spacing="2">
                                                 <TextBlock Style="{StaticResource CaptionStyle}" Text="LIVE INPUT" />
                                                 <TextBlock
+                                                    MaxLines="1"
                                                     FontSize="13"
                                                     Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                    Text="{x:Bind PrimaryInputLabel, Mode=OneWay}" />
+                                                    Text="{x:Bind PrimaryInputLabel, Mode=OneWay}"
+                                                    TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
                                             <Button
                                                 Grid.Column="1"

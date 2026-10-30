@@ -15,12 +15,17 @@ public sealed class AppServices
         Notifications = new NotificationService();
 
 #if DEBUG
-        Input = Environment.GetEnvironmentVariable("PADMON_SIMULATE") == "1"
-            ? new SimulatedControllerSource()
-            : new SdlControllerSource();
-#else
-        Input = new SdlControllerSource();
+        if (Environment.GetEnvironmentVariable("PADMON_SIMULATE") == "1")
+        {
+            Input = new SimulatedControllerSource();
+        }
+        else
 #endif
+        {
+            var sdl = new SdlControllerSource();
+            var windowsGaming = new WindowsGamingControllerSource();
+            Input = new CompositeControllerSource(sdl, windowsGaming);
+        }
 
         Monitor = new ControllerMonitor(Input, History, dispatcher);
     }

@@ -7,7 +7,14 @@ public sealed partial class BooleanToVisibilityConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)
     {
-        return value is true ? Visibility.Visible : Visibility.Collapsed;
+        var visible = value is true;
+
+        if (parameter is string text && text.Equals("Invert", StringComparison.OrdinalIgnoreCase))
+        {
+            visible = !visible;
+        }
+
+        return visible ? Visibility.Visible : Visibility.Collapsed;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, string language)

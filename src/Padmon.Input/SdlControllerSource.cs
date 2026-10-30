@@ -1,5 +1,6 @@
 using System.Text;
 using Padmon.Core.Devices;
+using Padmon.Core.Diagnostics;
 using SDL3;
 
 namespace Padmon.Input;
@@ -16,6 +17,9 @@ public sealed class SdlControllerSource : IControllerSource
     private const int LivePublishMilliseconds = 16;
     private const int ReconcileMilliseconds = 2_000;
 
+    private static readonly bool Diagnostic =
+        Environment.GetEnvironmentVariable("PADMON_DIAGNOSTIC") == "1";
+
     private readonly object _gate = new();
     private readonly Dictionary<uint, RuntimeDevice> _devices = [];
 
@@ -24,6 +28,7 @@ public sealed class SdlControllerSource : IControllerSource
     private TaskCompletionSource<bool> _started = NewStartedSource();
     private int _livePreview;
     private bool _disposed;
+    private string? _lastReconcileSignature;
 
     public event EventHandler<ControllerConnectionChangedEventArgs>? ConnectionChanged;
 
@@ -92,6 +97,7 @@ public sealed class SdlControllerSource : IControllerSource
 
     public void SetLivePreview(bool enabled)
     {
+        PadmonLog.Info($"live preview: {enabled}");
         Interlocked.Exchange(ref _livePreview, enabled ? 1 : 0);
     }
 
@@ -153,11 +159,16 @@ public sealed class SdlControllerSource : IControllerSource
                 | SDL.InitFlags.Sensor
                 | SDL.InitFlags.Events;
 
+            PadmonLog.Info($"SDL init starting: {flags}");
+
             if (!SDL.Init(flags))
             {
-                throw new InvalidOperationException($"SDL could not initialize: {SDL.GetError()}");
+                var error = SDL.GetError();
+                PadmonLog.Error($"SDL init failed: {error}");
+                throw new InvalidOperationException($"SDL could not initialize: {error}");
             }
 
+            PadmonLog.Info("SDL initialized");
             Reconcile();
             _started.TrySetResult(true);
 
@@ -195,11 +206,13 @@ public sealed class SdlControllerSource : IControllerSource
         }
         catch (Exception exception)
         {
+            PadmonLog.Error("SDL thread failed", exception);
             _started.TrySetException(exception);
             ErrorOccurred?.Invoke(this, exception.Message);
         }
         finally
         {
+            PadmonLog.Info("SDL thread stopping");
             CloseAll();
             SDL.Quit();
             _started.TrySetResult(false);
@@ -225,6 +238,25 @@ public sealed class SdlControllerSource : IControllerSource
             if (id != 0)
             {
                 liveIds.Add(id);
+            }
+        }
+
+        var signature = string.Join(",", liveIds.OrderBy(id => id));
+        if (Diagnostic || !string.Equals(signature, _lastReconcileSignature, StringComparison.Ordinal))
+        {
+            _lastReconcileSignature = signature;
+            PadmonLog.Info(
+                $"SDL reconcile: gamepads={gamepads.Length} joysticks={joysticks.Length} ids=[{signature}]");
+
+            foreach (var id in liveIds)
+            {
+                var mapped = SDL.IsGamepad(id);
+                var name = mapped ? SDL.GetGamepadNameForID(id) : SDL.GetJoystickNameForID(id);
+                var vendor = mapped ? SDL.GetGamepadVendorForID(id) : SDL.GetJoystickVendorForID(id);
+                var product = mapped ? SDL.GetGamepadProductForID(id) : SDL.GetJoystickProductForID(id);
+
+                PadmonLog.Info(
+                    $"SDL device id={id} mapped={mapped} name='{name ?? "?"}' vendor={vendor:X4} product={product:X4}");
             }
         }
 
@@ -256,13 +288,16 @@ public sealed class SdlControllerSource : IControllerSource
         }
 
         var isGamepad = SDL.IsGamepad(instanceId);
+        PadmonLog.Info($"opening SDL device id={instanceId} mapped={isGamepad}");
         var handle = isGamepad ? SDL.OpenGamepad(instanceId) : SDL.OpenJoystick(instanceId);
 
         if (handle == IntPtr.Zero)
         {
+            var error = SDL.GetError();
+            PadmonLog.Error($"could not open SDL device id={instanceId}: {error}");
             ErrorOccurred?.Invoke(
                 this,
-                $"Could not open controller {instanceId}: {SDL.GetError()}");
+                $"Could not open controller {instanceId}: {error}");
             return;
         }
 
@@ -273,6 +308,7 @@ public sealed class SdlControllerSource : IControllerSource
         }
         catch (Exception exception)
         {
+            PadmonLog.Error($"could not describe SDL device id={instanceId}", exception);
             CloseHandle(handle, isGamepad);
             ErrorOccurred?.Invoke(this, $"Could not read controller {instanceId}: {exception.Message}");
             return;
@@ -292,6 +328,9 @@ public sealed class SdlControllerSource : IControllerSource
             return;
         }
 
+        PadmonLog.Info(
+            $"controller added: id={instanceId} name='{device.Name}' vendor={device.VendorId:X4} product={device.ProductId:X4} mapped={device.IsMapped} serial='{device.Serial}' path='{device.Path}' key='{device.StableKey}'");
+
         ConnectionChanged?.Invoke(this, new ControllerConnectionChangedEventArgs(device, true));
     }
 
@@ -306,13 +345,26 @@ public sealed class SdlControllerSource : IControllerSource
             }
         }
 
+        PadmonLog.Info($"controller removed: id={instanceId} name='{runtime.Device.Name}' key='{runtime.Device.StableKey}'");
         CloseHandle(runtime.Handle, runtime.IsGamepad);
         ConnectionChanged?.Invoke(this, new ControllerConnectionChangedEventArgs(runtime.Device, false));
     }
 
     private void HandleEvent(SDL.Event sdlEvent)
     {
-        switch ((SDL.EventType)sdlEvent.Type)
+        var eventType = (SDL.EventType)sdlEvent.Type;
+
+        if (eventType is SDL.EventType.GamepadAdded
+            or SDL.EventType.JoystickAdded
+            or SDL.EventType.GamepadRemoved
+            or SDL.EventType.JoystickRemoved
+            or SDL.EventType.JoystickBatteryUpdated
+            or SDL.EventType.GamepadRemapped)
+        {
+            PadmonLog.Info($"SDL event: {eventType}");
+        }
+
+        switch (eventType)
         {
             case SDL.EventType.GamepadAdded:
                 AddDevice(sdlEvent.GDevice.Which);

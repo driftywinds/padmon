@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.UI.Dispatching;
 using Padmon.Core.Devices;
+using Padmon.Core.Diagnostics;
 using Padmon.Core.History;
 using Padmon.Input;
 using Padmon.ViewModels;
@@ -62,8 +63,10 @@ public sealed class ControllerMonitor : ObservableObject, IAsyncDisposable
             return;
         }
 
+        PadmonLog.Info("controller monitor starting");
         await _source.StartAsync(cancellationToken).ConfigureAwait(false);
         _startCompleted = true;
+        PadmonLog.Info("controller monitor started");
         SetMonitoring(true);
     }
 
@@ -141,6 +144,8 @@ public sealed class ControllerMonitor : ObservableObject, IAsyncDisposable
     private async void OnConnectionChanged(object? sender, ControllerConnectionChangedEventArgs args)
     {
         var initial = !_startCompleted;
+        PadmonLog.Info(
+            $"monitor connection event: connected={args.Connected} initial={initial} name='{args.Device.Name}' key='{args.Device.StableKey}'");
 
         try
         {
@@ -150,6 +155,9 @@ public sealed class ControllerMonitor : ObservableObject, IAsyncDisposable
                     args.Device,
                     DateTimeOffset.UtcNow).ConfigureAwait(false);
 
+                PadmonLog.Info(
+                    $"history connection recorded: key='{args.Device.StableKey}' isNew={result.IsNew} display='{result.Controller.DisplayName}'");
+
                 _dispatcher.TryEnqueue(() => ApplyConnection(args, initial, result));
                 return;
             }
@@ -158,10 +166,12 @@ public sealed class ControllerMonitor : ObservableObject, IAsyncDisposable
                 args.Device.StableKey,
                 DateTimeOffset.UtcNow).ConfigureAwait(false);
 
+            PadmonLog.Info($"history disconnection recorded: key='{args.Device.StableKey}'");
             _dispatcher.TryEnqueue(() => ApplyDisconnection(args, initial));
         }
         catch (Exception exception)
         {
+            PadmonLog.Error("controller monitor event failed", exception);
             _dispatcher.TryEnqueue(() =>
             {
                 Error = exception.Message;
@@ -201,6 +211,7 @@ public sealed class ControllerMonitor : ObservableObject, IAsyncDisposable
         _byKey.Add(controller.StableKey, controller);
         Controllers.Add(controller);
         OnPropertyChanged(nameof(ConnectedCount));
+        PadmonLog.Info($"UI controller added: name='{controller.DisplayName}' count={Controllers.Count}");
 
         if (!initial)
         {
@@ -217,6 +228,7 @@ public sealed class ControllerMonitor : ObservableObject, IAsyncDisposable
 
         Controllers.Remove(removed);
         OnPropertyChanged(nameof(ConnectedCount));
+        PadmonLog.Info($"UI controller removed: name='{removed.DisplayName}' count={Controllers.Count}");
 
         if (!initial)
         {

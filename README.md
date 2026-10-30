@@ -8,14 +8,14 @@ It is deliberately **not** a controller configuration suite. There are no remaps
 
 ## What is in the working preview
 
-- SDL3 controller discovery and hotplug monitoring on Windows 11.
+- SDL3 controller discovery and hotplug monitoring on Windows 11, with a Windows.Gaming.Input fallback for Xbox-class pads SDL misses.
 - Xbox, PlayStation, Switch, 8BitDo, GameSir, EasySMX, and generic controllers through SDL's gamepad mappings, with raw joystick fallback for unrecognized devices.
 - A persistent local catalogue of controllers, including first-seen, last-seen, and session count.
 - New/known device handling, battery and transport information where the device exposes it.
 - App-level renaming that uses the chosen name throughout the UI and notifications.
 - A live tester with buttons, sticks, triggers, shoulders, hats, and raw axis values.
 - A tray-resident background mode, close-to-tray behavior, and opt-in start with Windows.
-- Windows notifications for connect/disconnect, with a tray-balloon fallback when the modern notification API is unavailable.
+- Windows notifications for connect/disconnect, with a tray-balloon or in-app fallback when the modern notification API is unavailable.
 - SQLite history with retention settings; no cloud, telemetry, or account.
 
 ## Requirements
@@ -78,6 +78,7 @@ Everything stays local:
 - `src/Padmon.App` — WinUI 3 shell, pages, view models, tray, notifications.
 - `src/Padmon.Core` — controller domain models, settings, SQLite history.
 - `src/Padmon.Input` — SDL3 controller source on a dedicated background thread.
+- `src/Padmon.App/Services` — WGI fallback, source deduplication, tray, notifications, settings.
 
 See [docs/architecture.md](docs/architecture.md) for the details.
 
@@ -85,6 +86,6 @@ See [docs/architecture.md](docs/architecture.md) for the details.
 
 - The controller support matrix still needs real-hardware verification. The current test set is GameSir Cyclone 2, EasySMX X20, an original Xbox One controller, and an older PowerA controller.
 - Controllers without serial numbers and without a PnP container ID may share a model fingerprint; that is shown as a model-level identity rather than pretending per-unit identity.
-- The modern Windows App SDK notification path is implemented, with a tray-balloon fallback. It needs a real interactive user session for final verification.
+- The modern Windows App SDK notification path is implemented, with tray-balloon and in-app fallbacks. Low-integrity test sessions block native shell notifications; the in-app card is used there.
 - Single-instance behavior and a graceful “forget controller” flow are good next additions.
 - There is intentionally no MSIX packaging. Release packaging can be a portable self-contained folder first and MSIX later if the distribution story calls for it.

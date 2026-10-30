@@ -113,9 +113,9 @@ public sealed partial class ControllerDetailPage : Page
         const double radius = 52;
 
         LeftStickTransform.X = Tester.LeftStickX * radius;
-        LeftStickTransform.Y = -Tester.LeftStickY * radius;
+        LeftStickTransform.Y = Tester.LeftStickY * radius;
         RightStickTransform.X = Tester.RightStickX * radius;
-        RightStickTransform.Y = -Tester.RightStickY * radius;
+        RightStickTransform.Y = Tester.RightStickY * radius;
     }
 
     private async void Rumble_Click(object sender, RoutedEventArgs e)

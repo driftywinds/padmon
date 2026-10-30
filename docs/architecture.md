@@ -44,6 +44,7 @@ Framework-agnostic models and persistence.
 - Unknown devices fall back to the raw joystick API and still appear in the UI.
 - Device identity is serial-based when possible, then SDL GUID, then a model fingerprint. The next improvement is a Windows PnP container-ID lookup.
 - `ControllerMonitor` bridges source events to the UI thread and persists connect/disconnect sessions.
+- `WindowsGamingControllerSource` polls `Windows.Gaming.Input` on an STA thread as a fallback for Xbox-class devices SDL does not enumerate. Xbox-class devices use the standard `Gamepad` reading for correct stick/trigger directions; raw controllers use `RawGameController`. `CompositeControllerSource` suppresses WGI duplicates by vendor/product so one physical pad is never listed twice.
 
 ### `Padmon.App`
 
@@ -53,7 +54,7 @@ Framework-agnostic models and persistence.
 - `HistoryPage` shows known controllers and recent sessions.
 - `SettingsPage` edits background monitoring, notifications, retention, startup, and theme.
 - `TrayIconService` is a small Win32 `Shell_NotifyIcon` implementation, deliberately avoiding a third-party tray control tied to an older Windows App SDK.
-- `NotificationService` prefers the Windows App SDK `AppNotificationManager`; if it is unavailable, it falls back to a tray balloon.
+- `NotificationService` prefers the Windows App SDK `AppNotificationManager`; if it is unavailable, it falls back to a tray balloon, then an in-app notification card. The latter also covers restricted/low-integrity sessions where the Windows shell rejects tray and toast registration.
 
 ## Background model
 

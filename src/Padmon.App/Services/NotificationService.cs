@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Microsoft.Windows.AppNotifications;
 using Microsoft.Windows.AppNotifications.Builder;
 using Padmon.Core.Devices;
+using Padmon.Core.Diagnostics;
 
 namespace Padmon.Services;
 
@@ -22,10 +23,12 @@ public sealed class NotificationService : IDisposable
             AppNotificationManager.Default.NotificationInvoked += OnNotificationInvoked;
             AppNotificationManager.Default.Register();
             _registered = true;
+            PadmonLog.Info("app notification manager registered");
         }
         catch (Exception exception)
         {
             Debug.WriteLine($"padmon notifications are unavailable: {exception}");
+            PadmonLog.Error("app notification manager unavailable; using tray fallback", exception);
             LogFailure(exception);
         }
     }
@@ -56,6 +59,7 @@ public sealed class NotificationService : IDisposable
 
         if (!TryShow(title, body))
         {
+            PadmonLog.Info($"notification fallback: {title}");
             _fallback?.Invoke(title, body);
         }
     }
@@ -67,6 +71,7 @@ public sealed class NotificationService : IDisposable
 
         if (!TryShow(title, body))
         {
+            PadmonLog.Info($"notification fallback: {title}");
             _fallback?.Invoke(title, body);
         }
     }

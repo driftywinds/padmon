@@ -47,7 +47,7 @@ public sealed partial class ControllerViewModel : ObservableObject
         ConnectionKind.Usb => "USB",
         ConnectionKind.Bluetooth => "Bluetooth",
         ConnectionKind.Virtual => "Virtual",
-        _ => "Connection unknown"
+        _ => "Unknown"
     };
 
     public string Subtitle => $"{KindLabel} · {ConnectionLabel}";

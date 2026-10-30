@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Padmon.Core.Diagnostics;
 
 namespace Padmon.Services;
 
@@ -68,9 +69,11 @@ public sealed class TrayIconService : IDisposable
     {
         if (_created || _disposed || _windowHandle == IntPtr.Zero)
         {
+            PadmonLog.Info($"tray create skipped: created={_created} disposed={_disposed} hwnd={_windowHandle}");
             return;
         }
 
+        PadmonLog.Info($"tray create: hwnd={_windowHandle}");
         _icon = LoadTrayIcon();
         _ownsIcon = _icon != IntPtr.Zero;
 
@@ -90,6 +93,7 @@ public sealed class TrayIconService : IDisposable
         SetWindowSubclass(_windowHandle, _subclassProc, (UIntPtr)TrayIconId, IntPtr.Zero);
         AddIcon();
         _created = true;
+        PadmonLog.Info($"tray created: icon={_icon}");
     }
 
     public void UpdateTooltip(string text)
@@ -104,11 +108,11 @@ public sealed class TrayIconService : IDisposable
         Shell_NotifyIcon(NimModify, ref _data);
     }
 
-    public void ShowBalloon(string title, string body)
+    public bool ShowBalloon(string title, string body)
     {
         if (_disposed || !_created)
         {
-            return;
+            return false;
         }
 
         _data.szInfoTitle = Truncate(title, 63);
@@ -116,7 +120,11 @@ public sealed class TrayIconService : IDisposable
         _data.dwInfoFlags = NiifInfo;
         _data.uVersion = 5000;
         _data.uFlags = NifInfo;
-        Shell_NotifyIcon(NimModify, ref _data);
+
+        var result = Shell_NotifyIcon(NimModify, ref _data);
+        PadmonLog.Info(
+            $"tray balloon '{title}': result={result} error={Marshal.GetLastWin32Error()}");
+        return result;
     }
 
     public void Dispose()
@@ -130,7 +138,8 @@ public sealed class TrayIconService : IDisposable
 
         if (_created)
         {
-            Shell_NotifyIcon(NimDelete, ref _data);
+            var deleted = Shell_NotifyIcon(NimDelete, ref _data);
+            PadmonLog.Info($"tray delete: result={deleted}");
             RemoveWindowSubclass(_windowHandle, _subclassProc, (UIntPtr)TrayIconId);
             _created = false;
         }
@@ -150,7 +159,12 @@ public sealed class TrayIconService : IDisposable
 
         if (!Shell_NotifyIcon(NimAdd, ref _data))
         {
+            PadmonLog.Error($"tray add failed: {Marshal.GetLastWin32Error()}");
             Debug.WriteLine($"padmon could not add the tray icon: {Marshal.GetLastWin32Error()}");
+        }
+        else
+        {
+            PadmonLog.Info("tray add succeeded");
         }
     }
 
@@ -256,8 +270,15 @@ public sealed class TrayIconService : IDisposable
 
             if (icon != IntPtr.Zero)
             {
+                PadmonLog.Info($"tray icon loaded: {path}");
                 return icon;
             }
+
+            PadmonLog.Warn($"tray icon could not be loaded: {path} error={Marshal.GetLastWin32Error()}");
+        }
+        else
+        {
+            PadmonLog.Warn($"tray icon missing: {path}");
         }
 
         return LoadIcon(IntPtr.Zero, (IntPtr)32512);

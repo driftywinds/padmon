@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using Padmon.Core;
+using Padmon.Core.Diagnostics;
 using Padmon.Services;
 
 namespace Padmon;
@@ -18,6 +20,9 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        PadmonLog.Initialize(Path.Combine(PadmonPaths.LogsDirectory, "padmon.log"));
+        PadmonLog.Info($"launched: {string.Join(' ', Environment.GetCommandLineArgs())}");
+
         Services = new AppServices(DispatcherQueue.GetForCurrentThread());
 
         var startHidden = Environment.GetCommandLineArgs()
@@ -51,12 +56,15 @@ public partial class App : Application
         catch (Exception exception)
         {
             Debug.WriteLine($"padmon input failed to start: {exception}");
+            PadmonLog.Error("input failed to start", exception);
             LogStartupFailure(exception);
         }
     }
 
     private static void OnControllerConnected(object? sender, ViewModels.ControllerViewModel controller)
     {
+        PadmonLog.Info($"connect notification requested: name='{controller.DisplayName}'");
+
         if (Services.Settings.NotifyOnConnect && ShouldNotify())
         {
             Services.Notifications.ShowConnected(controller.DisplayName, controller.Device);
@@ -65,6 +73,8 @@ public partial class App : Application
 
     private static void OnControllerDisconnected(object? sender, ViewModels.ControllerViewModel controller)
     {
+        PadmonLog.Info($"disconnect notification requested: name='{controller.DisplayName}'");
+
         if (Services.Settings.NotifyOnDisconnect && ShouldNotify())
         {
             Services.Notifications.ShowDisconnected(controller.DisplayName, controller.Device);

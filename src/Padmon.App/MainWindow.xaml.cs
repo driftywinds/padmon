@@ -6,6 +6,7 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Padmon.Core.Diagnostics;
 using Padmon.Services;
 using Padmon.Views;
 using Windows.Graphics;
@@ -15,6 +16,7 @@ namespace Padmon;
 public sealed partial class MainWindow : Window, IDisposable
 {
     private TrayIconService? _trayIcon;
+    private NotificationWindow? _notificationWindow;
     private bool _trayInitialized;
     private bool _isExiting;
 
@@ -101,7 +103,16 @@ public sealed partial class MainWindow : Window, IDisposable
             ExitFromTray);
 
         _trayIcon.Create();
-        App.Services.Notifications.SetFallback(_trayIcon.ShowBalloon);
+        App.Services.Notifications.SetFallback((title, body) =>
+        {
+            if (_trayIcon.ShowBalloon(title, body))
+            {
+                return;
+            }
+
+            PadmonLog.Info($"showing in-app notification: {title}");
+            ShowInAppNotification(title, body);
+        });
         UpdateTrayToolTip();
     }
 
@@ -124,6 +135,15 @@ public sealed partial class MainWindow : Window, IDisposable
     {
         _trayIcon?.Dispose();
         _trayIcon = null;
+
+        _notificationWindow?.Close();
+        _notificationWindow = null;
+    }
+
+    private void ShowInAppNotification(string title, string body)
+    {
+        _notificationWindow ??= new NotificationWindow();
+        _notificationWindow.ShowMessage(title, body);
     }
 
     private void OnAppWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
