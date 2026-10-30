@@ -21,7 +21,15 @@ public partial class App : Application
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
         PadmonLog.Initialize(Path.Combine(PadmonPaths.LogsDirectory, "padmon.log"));
-        PadmonLog.Info($"launched: {string.Join(' ', Environment.GetCommandLineArgs())}");
+        var arguments = Environment.GetCommandLineArgs();
+        PadmonLog.Info($"launched: {string.Join(' ', arguments)}");
+
+        if (ElevatedToastRelay.IsToastCommand(arguments))
+        {
+            Environment.Exit(ElevatedToastRelay.HandleToastCommand(arguments));
+            return;
+        }
+
         DesktopToastService.Initialize();
 
         Services = new AppServices(DispatcherQueue.GetForCurrentThread());

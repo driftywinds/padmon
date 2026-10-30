@@ -81,14 +81,23 @@ internal static class DesktopToastService
 """);
 
             var notifier = ToastNotificationManager.CreateToastNotifier(Aumid);
-            var setting = notifier.Setting;
-            PadmonLog.Info($"native desktop toast notifier setting={setting}");
 
-            if (setting != NotificationSetting.Enabled)
+            try
+            {
+                var setting = notifier.Setting;
+                PadmonLog.Info($"native desktop toast notifier setting={setting}");
+
+                if (setting != NotificationSetting.Enabled)
+                {
+                    PadmonLog.Warn(
+                        $"native desktop toast blocked by Windows ({setting}); check Settings > System > Notifications, Focus/Do Not Disturb, and group policy");
+                    return false;
+                }
+            }
+            catch (Exception exception)
             {
                 PadmonLog.Warn(
-                    $"native desktop toast blocked by Windows ({setting}); check Settings > System > Notifications, Focus/Do Not Disturb, and group policy");
-                return false;
+                    $"could not read native toast notifier setting; attempting display anyway: {exception.Message}");
             }
 
             var toast = new ToastNotification(xml)

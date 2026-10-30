@@ -119,6 +119,14 @@ public sealed class NotificationService : IDisposable
 
     private bool TryShowNative(string title, string body)
     {
+        if (ElevatedToastRelay.IsElevated())
+        {
+            // Windows silently drops notifications from elevated processes.
+            // Relay to a normal-integrity helper instead.
+            PadmonLog.Info("elevated notification path: relaying toast");
+            return ElevatedToastRelay.TryShow(title, body);
+        }
+
         if (DesktopToastService.TryShow(title, body))
         {
             return true;
