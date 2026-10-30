@@ -1,0 +1,45 @@
+# Build output
+bin/
+obj/
+artifacts/
+AppPackages/
+BundleArtifacts/
+Generated Files/
+TestResults/
+BenchmarkDotNet.Artifacts/
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vscode/
+*.code-workspace
+
+# MSIX / signing artifacts
+*.appx
+*.appxbundle
+*.msix
+*.msixbundle
+*.pfx
+*.cer
+*.snk
+
+# Local data and logs
+*.log
+logs/
+*.db
+*.db-shm
+*.db-wal
+
+# Secrets and local overrides
+secrets.json
+appsettings.Local.json
+.env
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
