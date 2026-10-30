@@ -194,9 +194,73 @@ internal static class ElevatedToastRelay
     private static Process? FindExplorer()
     {
         var session = Process.GetCurrentProcess().SessionId;
+        var candidates = Process.GetProcessesByName("explorer")
+            .Where(process => process.SessionId == session)
+            .Select(process => new
+            {
+                Process = process,
+                Integrity = GetIntegrityRid(process.Id)
+            })
+            .OrderByDescending(candidate => candidate.Integrity == 0x2000 ? 2 : candidate.Integrity == 0x1000 ? 0 : 1)
+            .ToArray();
 
-        return Process.GetProcessesByName("explorer")
-            .FirstOrDefault(process => process.SessionId == session);
+        var selected = candidates.FirstOrDefault();
+
+        if (selected is not null)
+        {
+            PadmonLog.Info(
+                $"elevated toast relay: shell pid={selected.Process.Id} integrity=0x{selected.Integrity:X}");
+        }
+
+        return selected?.Process;
+    }
+
+    private static int GetIntegrityRid(int processId)
+    {
+        var process = OpenProcess(ProcessQueryLimitedInformation, false, (uint)processId);
+        if (process == IntPtr.Zero)
+        {
+            return -1;
+        }
+
+        try
+        {
+            if (!OpenProcessToken(process, TokenQuery, out var token))
+            {
+                return -2;
+            }
+
+            try
+            {
+                GetTokenInformation(token, 25, IntPtr.Zero, 0, out var length);
+                var buffer = Marshal.AllocHGlobal(length);
+
+                try
+                {
+                    if (!GetTokenInformation(token, 25, buffer, length, out _))
+                    {
+                        return -3;
+                    }
+
+                    var sid = Marshal.ReadIntPtr(buffer, 0);
+                    var count = Marshal.ReadByte(GetSidSubAuthorityCount(sid));
+                    var rid = GetSidSubAuthority(sid, (uint)(count - 1));
+                    return Marshal.ReadInt32(rid);
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(buffer);
+                }
+            }
+            finally
+            {
+                CloseHandle(token);
+            }
+        }
+        finally
+        {
+            CloseHandle(process);
+        }
     }
 
     private const uint WaitTimeout = 0x00000102;
@@ -238,6 +302,20 @@ internal static class ElevatedToastRelay
 
     [DllImport("advapi32.dll", SetLastError = true)]
     private static extern bool OpenProcessToken(IntPtr process, uint access, out IntPtr token);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    private static extern bool GetTokenInformation(
+        IntPtr token,
+        int infoClass,
+        IntPtr info,
+        int length,
+        out int returnLength);
+
+    [DllImport("advapi32.dll")]
+    private static extern IntPtr GetSidSubAuthority(IntPtr sid, uint index);
+
+    [DllImport("advapi32.dll")]
+    private static extern IntPtr GetSidSubAuthorityCount(IntPtr sid);
 
     [DllImport("advapi32.dll", SetLastError = true)]
     private static extern bool DuplicateTokenEx(
