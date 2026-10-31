@@ -33,6 +33,7 @@
 
   <ItemGroup>
     <Content Include="Assets\padmon-tray.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\padmon-transparent.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <Target Name="CopyWinUIPriToPublish" AfterTargets="Publish">

@@ -21,12 +21,13 @@
             <Border
                 Width="38"
                 Height="38"
-                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                Background="White"
                 CornerRadius="12">
-                <FontIcon
-                    FontSize="18"
-                    Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
-                    Glyph="&#xE7FC;" />
+                <Image
+                    Width="30"
+                    Height="30"
+                    Source="Assets/padmon-transparent.png"
+                    Stretch="Uniform" />
             </Border>
 
             <StackPanel

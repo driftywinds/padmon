@@ -32,12 +32,13 @@
                 <Border
                     Width="28"
                     Height="28"
-                    Background="{ThemeResource AccentFillColorDefaultBrush}"
+                    Background="White"
                     CornerRadius="9">
-                    <FontIcon
-                        FontSize="14"
-                        Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
-                        Glyph="&#xE7FC;" />
+                    <Image
+                        Width="22"
+                        Height="22"
+                        Source="Assets/padmon-transparent.png"
+                        Stretch="Uniform" />
                 </Border>
                 <TextBlock
                     VerticalAlignment="Center"
