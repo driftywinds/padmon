@@ -30,6 +30,10 @@ public partial class App : Application
             return;
         }
 
+        // Must happen before the first window exists so tray balloons are
+        // attributed to padmon's registered identity, elevated or not.
+        DesktopToastService.EnsureIdentity();
+
         Services = new AppServices(DispatcherQueue.GetForCurrentThread());
 
         var startHidden = Environment.GetCommandLineArgs()

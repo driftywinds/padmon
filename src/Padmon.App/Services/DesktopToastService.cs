@@ -32,7 +32,49 @@ internal static class DesktopToastService
 
     private static readonly object Sync = new();
     private static bool _prepared;
+    private static bool _identityReady;
     private static ToastNotification? _lastToast; // keep alive so events still fire
+
+    /// <summary>
+    /// Gives this process a stable, registered notification identity. Windows
+    /// converts tray balloons (Shell_NotifyIcon) into toasts and attributes them
+    /// to the process AppUserModelID; without a registered one the balloon is
+    /// attributed to a path-derived identity that differs by launch method and
+    /// elevation, and can be silently suppressed. Must run before any window is
+    /// created. Does not touch the Start Menu shortcut.
+    /// </summary>
+    public static void EnsureIdentity()
+    {
+        lock (Sync)
+        {
+            if (_identityReady)
+            {
+                return;
+            }
+
+            _identityReady = true;
+
+            var result = SetCurrentProcessExplicitAppUserModelID(Aumid);
+            PadmonLog.Info($"notification identity: AUMID set result=0x{result:X8}");
+            RegisterAumid();
+
+            try
+            {
+                var setting = ToastNotificationManager.CreateToastNotifier(Aumid).Setting;
+                PadmonLog.Info($"notification identity: Windows notification setting={setting}");
+
+                if (setting != NotificationSetting.Enabled)
+                {
+                    PadmonLog.Warn(
+                        $"notifications for padmon are blocked by Windows ({setting}); check Settings > System > Notifications and Focus/Do Not Disturb");
+                }
+            }
+            catch (Exception exception)
+            {
+                PadmonLog.Warn($"notification identity: could not read notification setting: {exception.Message}");
+            }
+        }
+    }
 
     public static void Initialize()
     {
