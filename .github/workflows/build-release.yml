@@ -5,6 +5,11 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Optional version tag to release, for example v0.2.0. Leave empty to build artifacts only."
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -17,6 +22,46 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release version
+        id: version
+        shell: pwsh
+        run: |
+          $tag = ""
+          $appVersion = "0.1.0"
+
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $requested = "${{ inputs.version }}".Trim()
+
+            if ($requested) {
+              if ($requested -notmatch '^[vV]') {
+                $requested = "v$requested"
+              }
+              else {
+                $requested = "v" + $requested.Substring(1)
+              }
+
+              if ($requested -notmatch '^v\d+\.\d+\.\d+([-.].*)?$') {
+                throw "Version must look like v1.2.3 or 1.2.3."
+              }
+
+              $tag = $requested
+              $appVersion = $tag.Substring(1)
+            }
+          }
+          elseif ("${{ github.ref }}" -like "refs/tags/v*") {
+            $tag = "${{ github.ref_name }}"
+            $appVersion = $tag.Substring(1)
+          }
+
+          "RELEASE_TAG=$tag" >> $env:GITHUB_ENV
+          "APP_VERSION=$appVersion" >> $env:GITHUB_ENV
+          "release_tag=$tag" >> $env:GITHUB_OUTPUT
+
+          Write-Host "Release tag: '$tag'"
+          Write-Host "App version: '$appVersion'"
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
@@ -35,6 +80,7 @@ jobs:
           --configuration Release
           --no-restore
           --property:Platform=x64
+          --property:Version=${{ env.APP_VERSION }}
           --property:UseSharedCompilation=false
           --maxcpucount:1
 
@@ -45,6 +91,7 @@ jobs:
           --runtime win-x64
           --self-contained true
           --property:Platform=x64
+          --property:Version=${{ env.APP_VERSION }}
           --property:WindowsAppSDKSelfContained=true
           --property:UseSharedCompilation=false
           --output artifacts/padmon-win-x64
@@ -101,14 +148,16 @@ jobs:
 
       # Releases get the one zip plus the bare portable exe (no nested archives).
       - name: Create release zip
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: env.RELEASE_TAG != ''
         shell: pwsh
         run: Compress-Archive -Path artifacts/padmon-win-x64/* -DestinationPath artifacts/padmon-win-x64.zip -Force
 
       - name: Publish GitHub release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: env.RELEASE_TAG != ''
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          target_commitish: ${{ github.sha }}
           files: |
             artifacts/padmon-win-x64.zip
             artifacts/padmon-portable/Padmon-portable.exe

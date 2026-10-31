@@ -206,6 +206,7 @@ public sealed partial class MainWindow : Window, IDisposable
         {
             "history" => typeof(HistoryPage),
             "settings" => typeof(SettingsPage),
+            "update" => typeof(UpdatePage),
             _ => typeof(ControllersPage)
         };
 

@@ -17,6 +17,7 @@ It is deliberately **not** a controller configuration suite. There are no remaps
 - A live tester with buttons, sticks, triggers, shoulders, hats, and raw axis values.
 - A "More information" stats-for-nerds dialog with identity, transport, mapping, history, and live sample details.
 - A tray-resident background mode, close-to-tray behavior, and opt-in start with Windows.
+- An Update tab that checks GitHub releases, identifies portable vs installed builds, and installs only when the user presses the update button.
 - Windows notifications for connect/disconnect: an in-app card by default, or the normal Windows shell tray notification when enabled.
 - SQLite history with retention settings; no cloud, telemetry, or account.
 
@@ -67,17 +68,19 @@ The app icon and tray icon are generated from `tools/generate-icon.py` (Pillow).
 
 ## Releases
 
-`.github/workflows/build-release.yml` builds the app on Windows and attaches two downloads to a GitHub Release when a `v*` tag is pushed:
+`.github/workflows/build-release.yml` builds the app on Windows. A `v*` tag, or a manual dispatch with an optional version such as `v0.2.0`, creates a GitHub Release with:
 
 - `padmon-win-x64.zip` — the app as a self-contained folder.
 - `Padmon-portable.exe` — a single file that unpacks the app to `%LOCALAPPDATA%\padmon\portable` on first run and launches it. Settings and history stay in `%LOCALAPPDATA%\padmon`.
 
-Workflow runs also upload each as an Actions artifact (the folder as raw files, so there is no zip inside the artifact zip).
+Manual dispatch without a version only produces Actions artifacts. Workflow runs also upload each build as an artifact (the folder as raw files, so there is no zip inside the artifact zip).
 
 ```powershell
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.0
+git push origin v0.2.0
 ```
+
+Or run **Build and release padmon** manually and provide `v0.2.0` in the optional version field.
 
 ## Data and privacy
 

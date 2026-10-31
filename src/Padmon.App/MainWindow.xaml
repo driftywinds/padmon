@@ -83,6 +83,11 @@
                         <FontIcon Glyph="&#xE713;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem Content="Update" Tag="update">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE895;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
             </NavigationView.MenuItems>
 
             <NavigationView.PaneFooter>

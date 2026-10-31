@@ -34,6 +34,7 @@ Framework-agnostic models and persistence.
 - `ControllerSnapshot` is the live input state: buttons, axes, hats, battery, and transport.
 - `SqliteDeviceHistoryStore` owns the local catalogue and session log. A nullable `merged_into` column groups adapter/controller identities; `GetControllersAsync` resolves the group and aggregates session counts, first-seen, and last-seen values, while `MergeAsync`/`UnmergeAsync` manage the relationship.
 - `JsonSettingsStore` owns the small user-settings file.
+- `UpdateService` checks GitHub releases, detects portable-launcher/portable-folder/installed builds, and prepares an explicit user-triggered install. The updater copies the release into place after padmon exits and restarts it.
 - `PadmonPaths` resolves `%LOCALAPPDATA%\padmon` and supports a `PADMON_DATA_DIR` override.
 
 ### `Padmon.Input`
