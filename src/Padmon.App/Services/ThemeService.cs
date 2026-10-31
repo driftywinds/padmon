@@ -4,20 +4,42 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Padmon.Core.Settings;
 using Windows.UI;
-using Windows.UI.ViewManagement;
 
 namespace Padmon.Services;
 
 internal static class ThemeService
 {
-    private static readonly ConditionalWeakTable<FrameworkElement, ResourceDictionary> Applied = new();
+    // Built-in highlight colours, matching the values in App.xaml.
+    private static readonly Color DarkHighlight = Color.FromArgb(255, 0x21, 0xF6, 0xFA);
+    private static readonly Color LightHighlight = Color.FromArgb(255, 0x3F, 0x8F, 0x68);
+
+    private sealed class RootState
+    {
+        // One brush per root, reused for every theme change. Its Color is changed in place, so
+        // every element using it updates immediately instead of waiting for XAML to re-resolve
+        // a ThemeResource (which can be skipped and leave the old theme's colour on screen).
+        public SolidColorBrush Highlight { get; } = new();
+        public ResourceDictionary? Dictionary { get; set; }
+        public Color? CustomHighlight { get; set; }
+        public bool Hooked { get; set; }
+    }
+
+    private static readonly ConditionalWeakTable<FrameworkElement, RootState> States = new();
 
     public static void Apply(FrameworkElement root, string theme, PadmonSettings settings)
     {
-        if (Applied.TryGetValue(root, out var previous))
+        var state = States.GetOrCreateValue(root);
+
+        if (state.Dictionary is not null)
         {
-            root.Resources.MergedDictionaries.Remove(previous);
-            Applied.Remove(root);
+            root.Resources.MergedDictionaries.Remove(state.Dictionary);
+            state.Dictionary = null;
+        }
+
+        if (!state.Hooked)
+        {
+            state.Hooked = true;
+            root.ActualThemeChanged += (_, _) => UpdateHighlight(root, state);
         }
 
         var dictionary = new ResourceDictionary();
@@ -30,11 +52,12 @@ internal static class ThemeService
             TryParse(settings.CustomThemeHighlight, out var highlight))
         {
             ApplyCustomPalette(dictionary, background, foreground, text, highlight);
+            state.CustomHighlight = highlight;
             baseTheme = IsLight(background) ? ElementTheme.Light : ElementTheme.Dark;
         }
         else
         {
-            dictionary["PadmonHighlightBrush"] = new SolidColorBrush(GetSystemAccent());
+            state.CustomHighlight = null;
             baseTheme = theme switch
             {
                 "Light" => ElementTheme.Light,
@@ -43,9 +66,18 @@ internal static class ThemeService
             };
         }
 
+        dictionary["PadmonHighlightBrush"] = state.Highlight;
+
         root.Resources.MergedDictionaries.Add(dictionary);
-        Applied.Add(root, dictionary);
+        state.Dictionary = dictionary;
         ForceThemeRefresh(root, baseTheme);
+        UpdateHighlight(root, state);
+    }
+
+    private static void UpdateHighlight(FrameworkElement root, RootState state)
+    {
+        state.Highlight.Color = state.CustomHighlight
+            ?? (root.ActualTheme == ElementTheme.Light ? LightHighlight : DarkHighlight);
     }
 
     private static void ApplyCustomPalette(
@@ -87,7 +119,6 @@ internal static class ThemeService
         dictionary["AccentFillColorDefaultBrush"] = Brush(highlight);
         dictionary["AccentTextFillColorPrimaryBrush"] = Brush(highlight);
         dictionary["TextOnAccentFillColorPrimaryBrush"] = Brush(onAccent);
-        dictionary["PadmonHighlightBrush"] = Brush(highlight);
     }
 
     private static void ForceThemeRefresh(FrameworkElement root, ElementTheme target)
@@ -100,18 +131,6 @@ internal static class ThemeService
         }
 
         root.RequestedTheme = target;
-    }
-
-    private static Color GetSystemAccent()
-    {
-        try
-        {
-            return new UISettings().GetColorValue(UIColorType.Accent);
-        }
-        catch
-        {
-            return Color.FromArgb(255, 0x21, 0xF6, 0xFA);
-        }
     }
 
     private static bool TryParse(string? value, out Color color)
