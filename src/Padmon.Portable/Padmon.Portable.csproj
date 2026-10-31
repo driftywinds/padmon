@@ -15,7 +15,7 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <AssemblyName>Padmon-portable</AssemblyName>
     <RootNamespace>Padmon.Portable</RootNamespace>
-    <ApplicationIcon>..\Padmon.App\Assets\padmon.ico</ApplicationIcon>
+    <ApplicationIcon>$(MSBuildProjectDirectory)\..\Padmon.App\Assets\padmon-app.ico</ApplicationIcon>
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
     <PublishTrimmed>true</PublishTrimmed>

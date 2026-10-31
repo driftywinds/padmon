@@ -29,17 +29,12 @@
                 Orientation="Horizontal"
                 Spacing="10"
                 VerticalAlignment="Center">
-                <Border
+                <Image
                     Width="28"
                     Height="28"
-                    Background="White"
-                    CornerRadius="9">
-                    <Image
-                        Width="22"
-                        Height="22"
-                        Source="Assets/padmon-transparent.png"
-                        Stretch="Uniform" />
-                </Border>
+                    AutomationProperties.Name="padmon"
+                    Source="Assets/padmon-accent.png"
+                    Stretch="Uniform" />
                 <TextBlock
                     VerticalAlignment="Center"
                     FontFamily="Segoe UI Variable Display"
@@ -79,28 +74,44 @@
                         <FontIcon Glyph="&#xE81C;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="Settings" Tag="settings">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE713;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem Content="Update" Tag="update">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE895;" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
             </NavigationView.MenuItems>
 
             <NavigationView.PaneFooter>
-                <StackPanel Margin="12,8,12,12" Spacing="2">
+                <StackPanel Margin="12,8,12,14" Spacing="10">
                     <TextBlock
+                        x:Name="BuildInfoText"
                         FontSize="11"
                         Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                        Text="padmon preview" />
-                    <TextBlock
-                        FontSize="11"
-                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                        Text="SDL3 · local only" />
+                        Text="0.0.0 · SDL 0.0.0" />
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button
+                            x:Name="SettingsFooterButton"
+                            Height="34"
+                            Padding="0"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            AutomationProperties.Name="Settings"
+                            Click="FooterSettings_Click"
+                            ToolTipService.ToolTip="Settings">
+                            <FontIcon FontSize="16" Glyph="&#xE713;" />
+                        </Button>
+                        <Button
+                            x:Name="UpdateFooterButton"
+                            Grid.Column="1"
+                            Height="34"
+                            Padding="0"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            AutomationProperties.Name="Update"
+                            Click="FooterUpdate_Click"
+                            ToolTipService.ToolTip="Update">
+                            <FontIcon FontSize="16" Glyph="&#xE895;" />
+                        </Button>
+                    </Grid>
                 </StackPanel>
             </NavigationView.PaneFooter>
 

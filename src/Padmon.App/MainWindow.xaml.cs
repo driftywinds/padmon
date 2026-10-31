@@ -21,6 +21,7 @@ public sealed partial class MainWindow : Window, IDisposable
     public MainWindow()
     {
         InitializeComponent();
+        BuildInfoText.Text = $"{UpdateService.CurrentVersion} · SDL {SdlInfo.Version}";
 
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
@@ -29,6 +30,12 @@ public sealed partial class MainWindow : Window, IDisposable
         AppWindow.Resize(new SizeInt32(1180, 760));
         AppWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
         AppWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
+
+        var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "padmon.ico");
+        if (File.Exists(iconPath))
+        {
+            AppWindow.SetIcon(iconPath);
+        }
 
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
@@ -198,6 +205,18 @@ public sealed partial class MainWindow : Window, IDisposable
         {
             NavigatePage(tag);
         }
+    }
+
+    private void FooterSettings_Click(object sender, RoutedEventArgs e)
+    {
+        Navigation.SelectedItem = null;
+        NavigatePage("settings");
+    }
+
+    private void FooterUpdate_Click(object sender, RoutedEventArgs e)
+    {
+        Navigation.SelectedItem = null;
+        NavigatePage("update");
     }
 
     private void NavigatePage(string tag)

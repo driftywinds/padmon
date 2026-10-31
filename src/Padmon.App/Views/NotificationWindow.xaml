@@ -18,17 +18,11 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Border
+            <Image
                 Width="38"
                 Height="38"
-                Background="White"
-                CornerRadius="12">
-                <Image
-                    Width="30"
-                    Height="30"
-                    Source="Assets/padmon-transparent.png"
-                    Stretch="Uniform" />
-            </Border>
+                Source="Assets/padmon-accent.png"
+                Stretch="Uniform" />
 
             <StackPanel
                 Grid.Column="1"

@@ -17,7 +17,6 @@ public sealed partial class UpdatePage : Page
         InitializeComponent();
         CurrentVersionText.Text = $"Version {UpdateService.CurrentVersion}";
         BuildKindText.Text = UpdateService.ModeLabel;
-        ProgressText.Text = "Idle";
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -40,8 +39,7 @@ public sealed partial class UpdatePage : Page
 
         _checking = true;
         CheckButton.IsEnabled = false;
-        CheckProgress.IsActive = true;
-        ProgressText.Text = "Checking GitHub releases…";
+        CheckButton.Content = "Checking…";
         StatusBar.IsOpen = false;
         AvailableCard.Visibility = Visibility.Collapsed;
         UpToDateCard.Visibility = Visibility.Collapsed;
@@ -102,8 +100,7 @@ public sealed partial class UpdatePage : Page
         {
             _checking = false;
             CheckButton.IsEnabled = true;
-            CheckProgress.IsActive = false;
-            ProgressText.Text = "Idle";
+            CheckButton.Content = "Check for updates";
         }
     }
 
@@ -131,14 +128,16 @@ public sealed partial class UpdatePage : Page
 
         InstallButton.IsEnabled = false;
         CheckButton.IsEnabled = false;
-        CheckProgress.IsActive = true;
-        ProgressText.Text = "Downloading update…";
-        StatusBar.IsOpen = false;
+        InstallButton.Content = "Downloading…";
+        StatusBar.Severity = InfoBarSeverity.Informational;
+        StatusBar.Title = "Downloading update";
+        StatusBar.Message = "Downloading the release from GitHub. padmon will restart when it is ready.";
+        StatusBar.IsOpen = true;
 
         try
         {
             await UpdateService.InstallAsync(update);
-            ProgressText.Text = "Restarting to install…";
+            InstallButton.Content = "Restarting…";
             StatusBar.Severity = InfoBarSeverity.Success;
             StatusBar.Title = "Update downloaded";
             StatusBar.Message = "padmon will restart and finish installing the update.";
@@ -154,9 +153,8 @@ public sealed partial class UpdatePage : Page
             StatusBar.Message = exception.Message;
             StatusBar.IsOpen = true;
             InstallButton.IsEnabled = true;
+            InstallButton.Content = "Download and install";
             CheckButton.IsEnabled = true;
-            CheckProgress.IsActive = false;
-            ProgressText.Text = "Idle";
         }
     }
 

@@ -120,22 +120,6 @@
                     </StackPanel>
                 </Border>
 
-                <StackPanel
-                    HorizontalAlignment="Center"
-                    Orientation="Horizontal"
-                    Spacing="10">
-                    <ProgressRing
-                        x:Name="CheckProgress"
-                        Width="18"
-                        Height="18"
-                        IsActive="False" />
-                    <TextBlock
-                        x:Name="ProgressText"
-                        VerticalAlignment="Center"
-                        Style="{StaticResource CaptionStyle}"
-                        Text="Idle" />
-                </StackPanel>
-
             </StackPanel>
         </Grid>
     </ScrollViewer>

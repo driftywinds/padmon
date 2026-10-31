@@ -12,6 +12,8 @@ public sealed partial class SettingsPage : Page
     {
         ViewModel = new SettingsViewModel(App.Services.SettingsStore);
         InitializeComponent();
+        AboutVersionText.Text = $"Version {UpdateService.CurrentVersion}";
+        AboutSdlText.Text = $"SDL {SdlInfo.Version}";
     }
 
     public SettingsViewModel ViewModel { get; private set; }

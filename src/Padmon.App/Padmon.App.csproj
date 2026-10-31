@@ -18,7 +18,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <PublishSingleFile>false</PublishSingleFile>
-    <ApplicationIcon>Assets\padmon.ico</ApplicationIcon>
+    <ApplicationIcon>$(MSBuildProjectDirectory)\Assets\padmon-app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,6 +34,7 @@
   <ItemGroup>
     <Content Include="Assets\padmon-tray.ico" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\padmon-transparent.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\padmon-accent.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <Target Name="CopyWinUIPriToPublish" AfterTargets="Publish">

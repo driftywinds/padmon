@@ -279,13 +279,15 @@
                                 VerticalAlignment="Center"
                                 Spacing="2">
                                 <TextBlock
+                                    x:Name="AboutVersionText"
                                     HorizontalAlignment="Right"
                                     Style="{StaticResource CaptionStyle}"
-                                    Text="0.1.0 preview" />
+                                    Text="Version 0.0.0" />
                                 <TextBlock
+                                    x:Name="AboutSdlText"
                                     HorizontalAlignment="Right"
                                     Style="{StaticResource MonoStyle}"
-                                    Text="SDL 3.4.18" />
+                                    Text="SDL 0.0.0" />
                             </StackPanel>
                         </Grid>
                     </Border>
