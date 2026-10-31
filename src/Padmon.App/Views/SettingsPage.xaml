@@ -35,6 +35,8 @@
                                 </StackPanel>
                                 <ToggleSwitch
                                     Grid.Column="1"
+                                    MinWidth="0"
+                                    HorizontalAlignment="Right"
                                     Margin="20,0,0,0"
                                     VerticalAlignment="Center"
                                     AutomationProperties.Name="Keep monitoring in the background"
@@ -56,6 +58,8 @@
                                 </StackPanel>
                                 <ToggleSwitch
                                     Grid.Column="1"
+                                    MinWidth="0"
+                                    HorizontalAlignment="Right"
                                     Margin="20,0,0,0"
                                     VerticalAlignment="Center"
                                     AutomationProperties.Name="Start with Windows"
@@ -84,6 +88,8 @@
                                 </StackPanel>
                                 <ToggleSwitch
                                     Grid.Column="1"
+                                    MinWidth="0"
+                                    HorizontalAlignment="Right"
                                     Margin="20,0,0,0"
                                     VerticalAlignment="Center"
                                     AutomationProperties.Name="Controller connected"
@@ -105,6 +111,8 @@
                                 </StackPanel>
                                 <ToggleSwitch
                                     Grid.Column="1"
+                                    MinWidth="0"
+                                    HorizontalAlignment="Right"
                                     Margin="20,0,0,0"
                                     VerticalAlignment="Center"
                                     AutomationProperties.Name="Controller disconnected"
@@ -126,6 +134,8 @@
                                 </StackPanel>
                                 <ToggleSwitch
                                     Grid.Column="1"
+                                    MinWidth="0"
+                                    HorizontalAlignment="Right"
                                     Margin="20,0,0,0"
                                     VerticalAlignment="Center"
                                     AutomationProperties.Name="Only when padmon is in the background"
@@ -147,6 +157,8 @@
                                 </StackPanel>
                                 <ToggleSwitch
                                     Grid.Column="1"
+                                    MinWidth="0"
+                                    HorizontalAlignment="Right"
                                     Margin="20,0,0,0"
                                     VerticalAlignment="Center"
                                     AutomationProperties.Name="Native Windows notifications"
@@ -275,6 +287,8 @@
                             </StackPanel>
                             <ToggleSwitch
                                 Grid.Column="1"
+                                MinWidth="0"
+                                HorizontalAlignment="Right"
                                 Margin="20,0,0,0"
                                 VerticalAlignment="Center"
                                 AutomationProperties.Name="Use Windows accent colour"
