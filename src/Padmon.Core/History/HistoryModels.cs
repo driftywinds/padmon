@@ -15,6 +15,18 @@ public sealed record ControllerRecord(
     DateTimeOffset LastSeen,
     int SessionCount)
 {
+    public IReadOnlyList<ControllerAlias> Aliases { get; init; } = [];
+
+    public int DeviceCount => 1 + Aliases.Count;
+
+    public string DisplayName => string.IsNullOrWhiteSpace(CustomName) ? HardwareName : CustomName;
+}
+
+public sealed record ControllerAlias(
+    string StableKey,
+    string HardwareName,
+    string? CustomName)
+{
     public string DisplayName => string.IsNullOrWhiteSpace(CustomName) ? HardwareName : CustomName;
 }
 

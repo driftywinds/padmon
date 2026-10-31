@@ -20,6 +20,13 @@ public interface IDeviceHistoryStore
 
     Task RenameAsync(string stableKey, string? customName, CancellationToken cancellationToken = default);
 
+    Task MergeAsync(
+        string targetKey,
+        IReadOnlyList<string> sourceKeys,
+        CancellationToken cancellationToken = default);
+
+    Task UnmergeAsync(string targetKey, CancellationToken cancellationToken = default);
+
     Task ForgetAsync(string stableKey, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<ControllerRecord>> GetControllersAsync(CancellationToken cancellationToken = default);

@@ -15,7 +15,15 @@ public sealed class KnownControllerViewModel
 
     public string DisplayName => Record.DisplayName;
 
-    public string HardwareName => Record.HardwareName;
+    public string HardwareName => Record.DeviceCount > 1
+        ? $"{Record.HardwareName} · {Record.DeviceCount} devices"
+        : Record.HardwareName;
+
+    public bool IsMerged => Record.DeviceCount > 1;
+
+    public string MergedLabel { get; } = "MERGED";
+
+    public string MergeActionText => IsMerged ? "Separate" : "Merge";
 
     public string Initials => InitialsOf(Record.DisplayName);
 
@@ -43,6 +51,8 @@ public sealed class KnownControllerViewModel
         : $"{Record.SessionCount} sessions";
 
     public string MetaText => $"{KindLabel} · {SessionText}";
+
+    public IReadOnlyList<ControllerAlias> Aliases => Record.Aliases;
 
     public static string InitialsOf(string name)
     {

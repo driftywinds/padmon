@@ -32,7 +32,7 @@ Framework-agnostic models and persistence.
 
 - `ControllerDevice` is an immutable description of a connected controller.
 - `ControllerSnapshot` is the live input state: buttons, axes, hats, battery, and transport.
-- `SqliteDeviceHistoryStore` owns the local catalogue and session log.
+- `SqliteDeviceHistoryStore` owns the local catalogue and session log. A nullable `merged_into` column groups adapter/controller identities; `GetControllersAsync` resolves the group and aggregates session counts, first-seen, and last-seen values, while `MergeAsync`/`UnmergeAsync` manage the relationship.
 - `JsonSettingsStore` owns the small user-settings file.
 - `PadmonPaths` resolves `%LOCALAPPDATA%\padmon` and supports a `PADMON_DATA_DIR` override.
 

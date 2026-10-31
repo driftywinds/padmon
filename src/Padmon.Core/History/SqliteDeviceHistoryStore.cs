@@ -71,7 +71,8 @@ public sealed class SqliteDeviceHistoryStore : IDeviceHistoryStore, IDisposable
                     kind INTEGER NOT NULL,
                     first_seen TEXT NOT NULL,
                     last_seen TEXT NOT NULL,
-                    session_count INTEGER NOT NULL DEFAULT 0
+                    session_count INTEGER NOT NULL DEFAULT 0,
+                    merged_into TEXT NULL
                 );
 
                 CREATE TABLE IF NOT EXISTS sessions (
@@ -88,6 +89,8 @@ public sealed class SqliteDeviceHistoryStore : IDeviceHistoryStore, IDisposable
                 """;
             await schema.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
+
+        await EnsureMergedIntoColumnAsync(connection, cancellationToken).ConfigureAwait(false);
 
         _initialized = true;
     }
@@ -291,6 +294,72 @@ public sealed class SqliteDeviceHistoryStore : IDeviceHistoryStore, IDisposable
         }
     }
 
+    public async Task MergeAsync(
+        string targetKey,
+        IReadOnlyList<string> sourceKeys,
+        CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync(cancellationToken).ConfigureAwait(false);
+        await _writeGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            await using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+            await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+            foreach (var sourceKey in sourceKeys
+                         .Where(key => !string.Equals(key, targetKey, StringComparison.Ordinal))
+                         .Distinct(StringComparer.Ordinal))
+            {
+                await using var command = connection.CreateCommand();
+                command.Transaction = (SqliteTransaction)transaction;
+                command.CommandText =
+                    """
+                    UPDATE controllers
+                    SET merged_into = $target
+                    WHERE stable_key = $source;
+                    """;
+                command.Parameters.AddWithValue("$target", targetKey);
+                command.Parameters.AddWithValue("$source", sourceKey);
+                await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _writeGate.Release();
+        }
+    }
+
+    public async Task UnmergeAsync(
+        string targetKey,
+        CancellationToken cancellationToken = default)
+    {
+        await EnsureInitializedAsync(cancellationToken).ConfigureAwait(false);
+        await _writeGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            await using var connection = new SqliteConnection(_connectionString);
+            await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+            await using var command = connection.CreateCommand();
+            command.CommandText =
+                """
+                UPDATE controllers
+                SET merged_into = NULL
+                WHERE merged_into = $target;
+                """;
+            command.Parameters.AddWithValue("$target", targetKey);
+            await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _writeGate.Release();
+        }
+    }
+
     public async Task ForgetAsync(string stableKey, CancellationToken cancellationToken = default)
     {
         await EnsureInitializedAsync(cancellationToken).ConfigureAwait(false);
@@ -337,32 +406,137 @@ public sealed class SqliteDeviceHistoryStore : IDeviceHistoryStore, IDisposable
         command.CommandText =
             """
             SELECT stable_key, hardware_name, custom_name, serial, vendor_id, product_id,
-                   sdl_guid, kind, first_seen, last_seen, session_count
+                   sdl_guid, kind, first_seen, last_seen, session_count, merged_into
             FROM controllers
             ORDER BY last_seen DESC;
             """;
 
-        var records = new List<ControllerRecord>();
-        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-
-        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        var rows = new List<ControllerRow>();
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
         {
-            records.Add(new ControllerRecord(
-                reader.GetString(0),
-                reader.GetString(1),
-                reader.IsDBNull(2) ? null : reader.GetString(2),
-                reader.IsDBNull(3) ? null : reader.GetString(3),
-                (ushort)reader.GetInt32(4),
-                (ushort)reader.GetInt32(5),
-                reader.IsDBNull(6) ? null : reader.GetString(6),
-                (ControllerKind)reader.GetInt32(7),
-                ParseTimestamp(reader.GetString(8)),
-                ParseTimestamp(reader.GetString(9)),
-                reader.GetInt32(10)));
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                rows.Add(new ControllerRow(
+                    reader.GetString(0),
+                    reader.GetString(1),
+                    reader.IsDBNull(2) ? null : reader.GetString(2),
+                    reader.IsDBNull(3) ? null : reader.GetString(3),
+                    (ushort)reader.GetInt32(4),
+                    (ushort)reader.GetInt32(5),
+                    reader.IsDBNull(6) ? null : reader.GetString(6),
+                    (ControllerKind)reader.GetInt32(7),
+                    ParseTimestamp(reader.GetString(8)),
+                    ParseTimestamp(reader.GetString(9)),
+                    reader.GetInt32(10),
+                    reader.IsDBNull(11) ? null : reader.GetString(11)));
+            }
         }
 
-        return records;
+        var byKey = rows.ToDictionary(row => row.StableKey, StringComparer.Ordinal);
+        var rootByKey = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        string ResolveRoot(string key)
+        {
+            if (rootByKey.TryGetValue(key, out var known))
+            {
+                return known;
+            }
+
+            var current = key;
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+
+            while (byKey.TryGetValue(current, out var row) &&
+                   !string.IsNullOrWhiteSpace(row.MergedInto) &&
+                   seen.Add(current))
+            {
+                current = row.MergedInto;
+            }
+
+            rootByKey[key] = current;
+            return current;
+        }
+
+        var groups = rows
+            .GroupBy(row => ResolveRoot(row.StableKey), StringComparer.Ordinal)
+            .Select(group => group.ToArray())
+            .Select(group =>
+            {
+                var rootKey = ResolveRoot(group[0].StableKey);
+                var root = group.FirstOrDefault(row => string.Equals(row.StableKey, rootKey, StringComparison.Ordinal))
+                    ?? group.OrderByDescending(row => row.LastSeen).First();
+
+                var aliases = group
+                    .Where(row => !string.Equals(row.StableKey, root.StableKey, StringComparison.Ordinal))
+                    .OrderByDescending(row => row.LastSeen)
+                    .Select(row => new ControllerAlias(row.StableKey, row.HardwareName, row.CustomName))
+                    .ToArray();
+
+                return new ControllerRecord(
+                    root.StableKey,
+                    root.HardwareName,
+                    root.CustomName,
+                    root.Serial,
+                    root.VendorId,
+                    root.ProductId,
+                    root.SdlGuid,
+                    root.Kind,
+                    group.Min(row => row.FirstSeen),
+                    group.Max(row => row.LastSeen),
+                    group.Sum(row => row.SessionCount))
+                {
+                    Aliases = aliases
+                };
+            })
+            .OrderByDescending(record => record.LastSeen)
+            .ToArray();
+
+        return groups;
     }
+
+    private static async Task EnsureMergedIntoColumnAsync(
+        SqliteConnection connection,
+        CancellationToken cancellationToken)
+    {
+        var hasColumn = false;
+
+        await using (var info = connection.CreateCommand())
+        {
+            info.CommandText = "PRAGMA table_info(controllers);";
+            await using var reader = await info.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                if (string.Equals(reader.GetString(1), "merged_into", StringComparison.OrdinalIgnoreCase))
+                {
+                    hasColumn = true;
+                    break;
+                }
+            }
+        }
+
+        if (hasColumn)
+        {
+            return;
+        }
+
+        await using var alter = connection.CreateCommand();
+        alter.CommandText = "ALTER TABLE controllers ADD COLUMN merged_into TEXT NULL;";
+        await alter.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private sealed record ControllerRow(
+        string StableKey,
+        string HardwareName,
+        string? CustomName,
+        string? Serial,
+        ushort VendorId,
+        ushort ProductId,
+        string? SdlGuid,
+        ControllerKind Kind,
+        DateTimeOffset FirstSeen,
+        DateTimeOffset LastSeen,
+        int SessionCount,
+        string? MergedInto);
 
     public async Task<IReadOnlyList<ConnectionSession>> GetSessionsAsync(
         int limit = 200,

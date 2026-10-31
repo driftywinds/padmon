@@ -296,6 +296,7 @@
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <Border
                                                 Width="38"
@@ -315,9 +316,24 @@
                                                 Margin="12,0,12,0"
                                                 VerticalAlignment="Center"
                                                 Spacing="1">
-                                                <TextBlock
-                                                    Style="{StaticResource CardTitleStyle}"
-                                                    Text="{x:Bind DisplayName}" />
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock
+                                                        VerticalAlignment="Center"
+                                                        Style="{StaticResource CardTitleStyle}"
+                                                        Text="{x:Bind DisplayName}" />
+                                                    <Border
+                                                        Padding="8,2"
+                                                        VerticalAlignment="Center"
+                                                        Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                        CornerRadius="8"
+                                                        Visibility="{x:Bind IsMerged, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        <TextBlock
+                                                            FontSize="10"
+                                                            FontWeight="SemiBold"
+                                                            Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                                            Text="{x:Bind MergedLabel}" />
+                                                    </Border>
+                                                </StackPanel>
                                                 <TextBlock
                                                     Style="{StaticResource CardSubtitleStyle}"
                                                     Text="{x:Bind HardwareName}" />
@@ -336,6 +352,14 @@
                                                     Style="{StaticResource CaptionStyle}"
                                                     Text="{x:Bind SessionText}" />
                                             </StackPanel>
+                                            <Button
+                                                Grid.Column="3"
+                                                Margin="12,0,0,0"
+                                                VerticalAlignment="Center"
+                                                AutomationProperties.Name="{x:Bind MergeActionText}"
+                                                Click="MergeHistory_Click"
+                                                Content="{x:Bind MergeActionText}"
+                                                Tag="{x:Bind Record.StableKey}" />
                                         </Grid>
                                     </Border>
                                 </DataTemplate>

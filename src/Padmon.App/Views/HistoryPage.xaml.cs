@@ -40,7 +40,16 @@ public sealed partial class HistoryPage : Page
             return;
         }
 
-        var byKey = records.ToDictionary(record => record.StableKey, StringComparer.Ordinal);
+        var nameByKey = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var record in records)
+        {
+            nameByKey[record.StableKey] = record.DisplayName;
+
+            foreach (var alias in record.Aliases)
+            {
+                nameByKey[alias.StableKey] = record.DisplayName;
+            }
+        }
 
         KnownControllers.Clear();
         foreach (var record in records)
@@ -51,8 +60,8 @@ public sealed partial class HistoryPage : Page
         Sessions.Clear();
         foreach (var session in sessions)
         {
-            var name = byKey.TryGetValue(session.StableKey, out var record)
-                ? record.DisplayName
+            var name = nameByKey.TryGetValue(session.StableKey, out var displayName)
+                ? displayName
                 : "Unknown controller";
 
             Sessions.Add(new ConnectionSessionViewModel(session, name));
@@ -62,5 +71,26 @@ public sealed partial class HistoryPage : Page
         KnownListCard.Visibility = KnownControllers.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
         SessionsEmptyCard.Visibility = Sessions.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         SessionsListCard.Visibility = Sessions.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private async void Merge_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: string stableKey })
+        {
+            return;
+        }
+
+        var controller = KnownControllers.FirstOrDefault(
+            candidate => string.Equals(candidate.Record.StableKey, stableKey, StringComparison.Ordinal));
+
+        if (controller is null)
+        {
+            return;
+        }
+
+        if (await DeviceMergeDialog.ShowAsync(XamlRoot, controller, KnownControllers))
+        {
+            await LoadAsync();
+        }
     }
 }

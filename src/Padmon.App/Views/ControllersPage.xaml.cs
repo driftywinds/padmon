@@ -15,6 +15,7 @@ namespace Padmon.Views;
 public sealed partial class ControllersPage : Page
 {
     private int _historyLoadVersion;
+    private IReadOnlyList<KnownControllerViewModel> _allKnownControllers = [];
 
     public ControllersPage()
     {
@@ -114,9 +115,14 @@ public sealed partial class ControllersPage : Page
             .Select(controller => controller.StableKey)
             .ToHashSet(StringComparer.Ordinal);
 
-        var known = records
-            .Where(record => !connectedKeys.Contains(record.StableKey))
+        var allKnown = records
             .Select(record => new KnownControllerViewModel(record))
+            .ToList();
+
+        _allKnownControllers = allKnown;
+
+        var known = allKnown
+            .Where(controller => !connectedKeys.Contains(controller.Record.StableKey))
             .ToList();
 
         PreviousControllers.Clear();
@@ -133,6 +139,27 @@ public sealed partial class ControllersPage : Page
     private void ViewHistory_Click(object sender, RoutedEventArgs e)
     {
         ((MainWindow)App.MainWindow!).NavigateTo("history");
+    }
+
+    private async void MergeHistory_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: string stableKey })
+        {
+            return;
+        }
+
+        var controller = PreviousControllers.FirstOrDefault(
+            candidate => string.Equals(candidate.Record.StableKey, stableKey, StringComparison.Ordinal));
+
+        if (controller is null)
+        {
+            return;
+        }
+
+        if (await DeviceMergeDialog.ShowAsync(XamlRoot, controller, _allKnownControllers))
+        {
+            await ReloadHistoryAsync();
+        }
     }
 
     private async void MoreInfo_Click(object sender, RoutedEventArgs e)
