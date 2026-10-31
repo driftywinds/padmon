@@ -6,10 +6,66 @@
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Default">
-                    <SolidColorBrush x:Key="PadmonWindowBackgroundBrush" Color="#0A0B0C" />
+                    <SolidColorBrush x:Key="PadmonWindowBackgroundBrush" Color="#111214" />
+
+                    <!-- Solid, near-black dark palette (no gradients, no translucency) -->
+                    <SolidColorBrush x:Key="SolidBackgroundFillColorBaseBrush" Color="#111214" />
+                    <SolidColorBrush x:Key="SolidBackgroundFillColorSecondaryBrush" Color="#16171A" />
+                    <SolidColorBrush x:Key="SolidBackgroundFillColorTertiaryBrush" Color="#1B1C20" />
+                    <SolidColorBrush x:Key="LayerFillColorDefaultBrush" Color="#16171A" />
+
+                    <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="#1A1B1F" />
+                    <SolidColorBrush x:Key="CardBackgroundFillColorSecondaryBrush" Color="#202226" />
+                    <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="#2A2C32" />
+                    <SolidColorBrush x:Key="DividerStrokeColorDefaultBrush" Color="#2A2C32" />
+
+                    <SolidColorBrush x:Key="SubtleFillColorSecondaryBrush" Color="#25272C" />
+                    <SolidColorBrush x:Key="SubtleFillColorTertiaryBrush" Color="#1F2024" />
+
+                    <SolidColorBrush x:Key="ControlFillColorDefaultBrush" Color="#25272C" />
+                    <SolidColorBrush x:Key="ControlFillColorSecondaryBrush" Color="#2C2F35" />
+                    <SolidColorBrush x:Key="ControlFillColorTertiaryBrush" Color="#212328" />
+                    <SolidColorBrush x:Key="ControlStrokeColorDefaultBrush" Color="#363940" />
+
+                    <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="#ECEDEF" />
+                    <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="#A6A9B0" />
+                    <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#7A7E86" />
+
+                    <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#7AA2F7" />
+                    <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="#9DBBFA" />
+                    <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#0E1014" />
+                    <SolidColorBrush x:Key="SystemFillColorSuccessBrush" Color="#6FCF97" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
-                    <SolidColorBrush x:Key="PadmonWindowBackgroundBrush" Color="#0A0B0C" />
+                    <SolidColorBrush x:Key="PadmonWindowBackgroundBrush" Color="#111214" />
+
+                    <!-- Solid, near-black dark palette (no gradients, no translucency) -->
+                    <SolidColorBrush x:Key="SolidBackgroundFillColorBaseBrush" Color="#111214" />
+                    <SolidColorBrush x:Key="SolidBackgroundFillColorSecondaryBrush" Color="#16171A" />
+                    <SolidColorBrush x:Key="SolidBackgroundFillColorTertiaryBrush" Color="#1B1C20" />
+                    <SolidColorBrush x:Key="LayerFillColorDefaultBrush" Color="#16171A" />
+
+                    <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="#1A1B1F" />
+                    <SolidColorBrush x:Key="CardBackgroundFillColorSecondaryBrush" Color="#202226" />
+                    <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="#2A2C32" />
+                    <SolidColorBrush x:Key="DividerStrokeColorDefaultBrush" Color="#2A2C32" />
+
+                    <SolidColorBrush x:Key="SubtleFillColorSecondaryBrush" Color="#25272C" />
+                    <SolidColorBrush x:Key="SubtleFillColorTertiaryBrush" Color="#1F2024" />
+
+                    <SolidColorBrush x:Key="ControlFillColorDefaultBrush" Color="#25272C" />
+                    <SolidColorBrush x:Key="ControlFillColorSecondaryBrush" Color="#2C2F35" />
+                    <SolidColorBrush x:Key="ControlFillColorTertiaryBrush" Color="#212328" />
+                    <SolidColorBrush x:Key="ControlStrokeColorDefaultBrush" Color="#363940" />
+
+                    <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="#ECEDEF" />
+                    <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="#A6A9B0" />
+                    <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#7A7E86" />
+
+                    <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#7AA2F7" />
+                    <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="#9DBBFA" />
+                    <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#0E1014" />
+                    <SolidColorBrush x:Key="SystemFillColorSuccessBrush" Color="#6FCF97" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
                     <SolidColorBrush x:Key="PadmonWindowBackgroundBrush" Color="#F5F5F6" />

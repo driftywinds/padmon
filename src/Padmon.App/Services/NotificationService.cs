@@ -27,7 +27,7 @@ public sealed class NotificationService : IDisposable
     public void ShowConnected(string displayName, ControllerDevice device)
     {
         var title = $"{displayName} connected";
-        var body = $"{Describe(device)} · padmon is watching";
+        var body = Describe(device);
 
         if (PreferNative && TryShowTray(title, body))
         {
@@ -41,7 +41,7 @@ public sealed class NotificationService : IDisposable
     public void ShowDisconnected(string displayName, ControllerDevice device)
     {
         var title = $"{displayName} disconnected";
-        var body = $"{Describe(device)} · still watching";
+        var body = Describe(device);
 
         if (PreferNative && TryShowTray(title, body))
         {
