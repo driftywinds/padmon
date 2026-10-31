@@ -66,7 +66,12 @@ The app icon and tray icon are generated from `tools/generate-icon.py` (Pillow).
 
 ## Releases
 
-`.github/workflows/build-release.yml` builds the app on Windows and attaches a portable `padmon-win-x64.zip` to a GitHub Release when a `v*` tag is pushed.
+`.github/workflows/build-release.yml` builds the app on Windows and attaches two downloads to a GitHub Release when a `v*` tag is pushed:
+
+- `padmon-win-x64.zip` — the app as a self-contained folder.
+- `Padmon-portable.exe` — a single file that unpacks the app to `%LOCALAPPDATA%\padmon\portable` on first run and launches it. Settings and history stay in `%LOCALAPPDATA%\padmon`.
+
+Workflow runs also upload each as an Actions artifact (the folder as raw files, so there is no zip inside the artifact zip).
 
 ```powershell
 git tag v0.1.0

@@ -61,22 +61,57 @@ jobs:
         shell: pwsh
         run: Copy-Item README.md artifacts/padmon-win-x64/README.md
 
-      - name: Create release archive
+      - name: Pack app as portable payload (internal, not uploaded)
         shell: pwsh
-        run: Compress-Archive -Path artifacts/padmon-win-x64/* -DestinationPath artifacts/padmon-win-x64.zip -Force
+        run: |
+          New-Item -ItemType Directory -Force artifacts/payload | Out-Null
+          Compress-Archive -Path artifacts/padmon-win-x64/* -DestinationPath artifacts/payload/payload.zip -Force
 
-      - name: Upload build artifact
+      - name: Publish single-file portable launcher
+        run: >
+          dotnet publish src/Padmon.Portable/Padmon.Portable.csproj
+          --configuration Release
+          --runtime win-x64
+          --property:PadmonPayload=${{ github.workspace }}/artifacts/payload/payload.zip
+          --property:UseSharedCompilation=false
+          --output artifacts/padmon-portable
+
+      - name: Verify portable exe
+        shell: pwsh
+        run: |
+          $exe = "artifacts/padmon-portable/Padmon-portable.exe"
+          if (-not (Test-Path $exe)) { throw "Missing $exe" }
+          "{0:N1} MB" -f ((Get-Item $exe).Length / 1MB)
+
+      # upload-artifact zips whatever it is given, so hand it the raw files.
+      # Uploading a .zip here is what produced a zip inside a zip.
+      - name: Upload folder build
         uses: actions/upload-artifact@v4
         with:
           name: padmon-win-x64
-          path: artifacts/padmon-win-x64.zip
+          path: artifacts/padmon-win-x64/
           if-no-files-found: error
+
+      - name: Upload portable exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: padmon-portable
+          path: artifacts/padmon-portable/Padmon-portable.exe
+          if-no-files-found: error
+
+      # Releases get the one zip plus the bare portable exe (no nested archives).
+      - name: Create release zip
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: Compress-Archive -Path artifacts/padmon-win-x64/* -DestinationPath artifacts/padmon-win-x64.zip -Force
 
       - name: Publish GitHub release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/padmon-win-x64.zip
+          files: |
+            artifacts/padmon-win-x64.zip
+            artifacts/padmon-portable/Padmon-portable.exe
           generate_release_notes: true
           draft: false
           prerelease: false

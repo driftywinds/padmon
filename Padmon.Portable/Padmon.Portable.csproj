@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Single-file portable launcher. The published app (a WinUI 3 self-contained
+    folder) is embedded as payload.zip; on first run the launcher unpacks it to
+    %LOCALAPPDATA%\padmon\portable\<build id> and starts the real Padmon.exe.
+    WinUI needs Padmon.pri and its native DLLs on disk next to the exe, so it
+    cannot be a true single-file bundle; this gives one file to the user.
+
+    Build: dotnet publish src/Padmon.Portable -c Release -r win-x64 -p:PadmonPayload=<path to payload.zip>
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <AssemblyName>Padmon-portable</AssemblyName>
+    <RootNamespace>Padmon.Portable</RootNamespace>
+    <ApplicationIcon>..\Padmon.App\Assets\padmon.ico</ApplicationIcon>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishTrimmed>true</PublishTrimmed>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(PadmonPayload)' != ''">
+    <EmbeddedResource Include="$(PadmonPayload)" LogicalName="payload.zip" />
+  </ItemGroup>
+
+</Project>

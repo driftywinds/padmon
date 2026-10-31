@@ -21,7 +21,13 @@ public static class StartupService
 
             if (enabled)
             {
-                var executable = Environment.ProcessPath;
+                // The portable launcher passes its own path so autostart survives updates.
+                var executable = Environment.GetEnvironmentVariable("PADMON_PORTABLE_EXE");
+                if (string.IsNullOrWhiteSpace(executable) || !File.Exists(executable))
+                {
+                    executable = Environment.ProcessPath;
+                }
+
                 if (string.IsNullOrWhiteSpace(executable))
                 {
                     return false;
