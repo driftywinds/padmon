@@ -417,34 +417,176 @@
                 <StackPanel Spacing="10">
                     <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="About" />
                     <Border Style="{StaticResource SettingsCardStyle}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Spacing="3">
-                                <TextBlock Style="{StaticResource CardTitleStyle}" Text="padmon" />
+                        <StackPanel Spacing="12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="3">
+                                    <TextBlock Style="{StaticResource CardTitleStyle}" Text="padmon" />
+                                    <TextBlock
+                                        Style="{StaticResource CardSubtitleStyle}"
+                                        Text="An open-source controller monitor for Windows." />
+                                </StackPanel>
+                                <StackPanel
+                                    Grid.Column="1"
+                                    Margin="20,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Spacing="2">
+                                    <TextBlock
+                                        x:Name="AboutVersionText"
+                                        HorizontalAlignment="Right"
+                                        Style="{StaticResource CaptionStyle}"
+                                        Text="Version 0.0.0" />
+                                    <TextBlock
+                                        x:Name="AboutSdlText"
+                                        HorizontalAlignment="Right"
+                                        Style="{StaticResource MonoStyle}"
+                                        Text="SDL 0.0.0" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Border Style="{StaticResource DividerStyle}" />
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="170" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <HyperlinkButton
+                                    Padding="0"
+                                    Content="Source code"
+                                    NavigateUri="https://github.com/driftywinds/padmon" />
                                 <TextBlock
-                                    Style="{StaticResource CardSubtitleStyle}"
-                                    Text="A calm controller monitor for Windows 11. Local only. No telemetry." />
-                            </StackPanel>
-                            <StackPanel
-                                Grid.Column="1"
-                                Margin="20,0,0,0"
-                                VerticalAlignment="Center"
-                                Spacing="2">
-                                <TextBlock
-                                    x:Name="AboutVersionText"
-                                    HorizontalAlignment="Right"
+                                    Grid.Column="1"
+                                    VerticalAlignment="Center"
                                     Style="{StaticResource CaptionStyle}"
-                                    Text="Version 0.0.0" />
+                                    Text="padmon on GitHub" />
+                            </Grid>
+
+                            <Border Style="{StaticResource DividerStyle}" />
+                            <TextBlock Style="{StaticResource CardTitleStyle}" Text="Built with" />
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="170" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <HyperlinkButton
+                                    Padding="0"
+                                    Content="SDL3"
+                                    NavigateUri="https://libsdl.org" />
                                 <TextBlock
-                                    x:Name="AboutSdlText"
-                                    HorizontalAlignment="Right"
-                                    Style="{StaticResource MonoStyle}"
-                                    Text="SDL 0.0.0" />
-                            </StackPanel>
-                        </Grid>
+                                    Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    Style="{StaticResource CaptionStyle}"
+                                    Text="Controller discovery, mapping and input" />
+                            </Grid>
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="170" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <HyperlinkButton
+                                    Padding="0"
+                                    Content="SDL3-CS"
+                                    NavigateUri="https://www.nuget.org/packages/SDL3-CS" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    Style="{StaticResource CaptionStyle}"
+                                    Text="C# bindings for SDL3" />
+                            </Grid>
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="170" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <HyperlinkButton
+                                    Padding="0"
+                                    Content=".NET"
+                                    NavigateUri="https://dotnet.microsoft.com" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    Style="{StaticResource CaptionStyle}"
+                                    Text="Runtime and SDK" />
+                            </Grid>
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="170" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <HyperlinkButton
+                                    Padding="0"
+                                    Content="Windows App SDK"
+                                    NavigateUri="https://github.com/microsoft/WindowsAppSDK" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    Style="{StaticResource CaptionStyle}"
+                                    Text="App platform" />
+                            </Grid>
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="170" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <HyperlinkButton
+                                    Padding="0"
+                                    Content="WinUI 3"
+                                    NavigateUri="https://learn.microsoft.com/windows/apps/winui/winui3/" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    Style="{StaticResource CaptionStyle}"
+                                    Text="User interface controls" />
+                            </Grid>
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="170" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <HyperlinkButton
+                                    Padding="0"
+                                    Content="CommunityToolkit.Mvvm"
+                                    NavigateUri="https://github.com/CommunityToolkit/dotnet" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    Style="{StaticResource CaptionStyle}"
+                                    Text="MVVM helpers" />
+                            </Grid>
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="170" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <HyperlinkButton
+                                    Padding="0"
+                                    Content="SQLite"
+                                    NavigateUri="https://sqlite.org" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    Style="{StaticResource CaptionStyle}"
+                                    Text="Local history storage" />
+                            </Grid>
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="170" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <HyperlinkButton
+                                    Padding="0"
+                                    Content="Pillow"
+                                    NavigateUri="https://python-pillow.org" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    Style="{StaticResource CaptionStyle}"
+                                    Text="Icon generation (build tooling)" />
+                            </Grid>
+                        </StackPanel>
                     </Border>
                 </StackPanel>
             </StackPanel>

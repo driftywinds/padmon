@@ -32,7 +32,7 @@ public sealed partial class SettingsPage : Page
         ViewModel.NotificationTestStatus = !nativeRequested
             ? "Sent as an in-app card. Enable Windows notifications to use the shell notification instead."
             : delivery == NotificationDeliveryKind.Tray
-                ? "Shown as a Windows tray notification in the bottom-right corner. No administrator rights are required."
+                ? "A test Windows tray notification in the bottom-right corner has been sent."
                 : "The Windows tray notification could not be created; padmon used the in-app card.";
     }
 
