@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Padmon.Core.Settings;
 using Windows.UI;
+using Windows.UI.ViewManagement;
 
 namespace Padmon.Services;
 
@@ -66,6 +67,13 @@ internal static class ThemeService
             };
         }
 
+        if (settings.UseSystemAccent)
+        {
+            var accent = GetSystemAccent();
+            ApplyAccentOverrides(dictionary, accent);
+            state.CustomHighlight = accent;
+        }
+
         dictionary["PadmonHighlightBrush"] = state.Highlight;
 
         root.Resources.MergedDictionaries.Add(dictionary);
@@ -78,6 +86,61 @@ internal static class ThemeService
     {
         state.Highlight.Color = state.CustomHighlight
             ?? (root.ActualTheme == ElementTheme.Light ? LightHighlight : DarkHighlight);
+    }
+
+    // Overrides every place the app and the WinUI controls use an accent colour. Controls such as
+    // ToggleSwitch look up their own named resources, so the generic accent brushes alone
+    // would not reach them.
+    private static void ApplyAccentOverrides(ResourceDictionary dictionary, Color accent)
+    {
+        var onAccent = IsLight(accent) ? Color.FromArgb(255, 12, 14, 16) : Colors.White;
+        var hover = WithAlpha(accent, 0xE6);
+        var pressed = WithAlpha(accent, 0xCC);
+
+        void Set(string key, Color color) => dictionary[key] = Brush(color);
+
+        Set("AccentFillColorDefaultBrush", accent);
+        Set("AccentFillColorSecondaryBrush", hover);
+        Set("AccentFillColorTertiaryBrush", pressed);
+        Set("AccentTextFillColorPrimaryBrush", accent);
+        Set("AccentTextFillColorSecondaryBrush", hover);
+        Set("AccentTextFillColorTertiaryBrush", pressed);
+        Set("TextOnAccentFillColorPrimaryBrush", onAccent);
+
+        // Toggle switches
+        Set("ToggleSwitchFillOn", accent);
+        Set("ToggleSwitchFillOnPointerOver", hover);
+        Set("ToggleSwitchFillOnPressed", pressed);
+        Set("ToggleSwitchStrokeOn", accent);
+        Set("ToggleSwitchStrokeOnPointerOver", hover);
+        Set("ToggleSwitchStrokeOnPressed", pressed);
+        Set("ToggleSwitchKnobFillOn", onAccent);
+        Set("ToggleSwitchKnobFillOnPointerOver", onAccent);
+        Set("ToggleSwitchKnobFillOnPressed", onAccent);
+
+        // Accent buttons, links and the nav selection pill
+        Set("AccentButtonBackground", accent);
+        Set("AccentButtonBackgroundPointerOver", hover);
+        Set("AccentButtonBackgroundPressed", pressed);
+        Set("AccentButtonForeground", onAccent);
+        Set("AccentButtonForegroundPointerOver", onAccent);
+        Set("AccentButtonForegroundPressed", onAccent);
+        Set("HyperlinkButtonForeground", accent);
+        Set("HyperlinkButtonForegroundPointerOver", hover);
+        Set("HyperlinkButtonForegroundPressed", pressed);
+        Set("NavigationViewSelectionIndicatorForeground", accent);
+
+        // Check boxes, sliders, progress and focus underlines
+        Set("CheckBoxCheckBackgroundFillChecked", accent);
+        Set("CheckBoxCheckBackgroundFillCheckedPointerOver", hover);
+        Set("CheckBoxCheckBackgroundFillCheckedPressed", pressed);
+        Set("CheckBoxCheckBackgroundStrokeChecked", accent);
+        Set("CheckBoxCheckBackgroundStrokeCheckedPointerOver", hover);
+        Set("CheckBoxCheckBackgroundStrokeCheckedPressed", pressed);
+        Set("SliderTrackValueFill", accent);
+        Set("SliderThumbBackground", accent);
+        Set("ProgressBarForeground", accent);
+        Set("TextControlBorderBrushFocused", accent);
     }
 
     private static void ApplyCustomPalette(
@@ -131,6 +194,18 @@ internal static class ThemeService
         }
 
         root.RequestedTheme = target;
+    }
+
+    private static Color GetSystemAccent()
+    {
+        try
+        {
+            return new UISettings().GetColorValue(UIColorType.Accent);
+        }
+        catch
+        {
+            return DarkHighlight;
+        }
     }
 
     private static bool TryParse(string? value, out Color color)

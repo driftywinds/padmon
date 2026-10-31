@@ -18,6 +18,8 @@ public sealed class PadmonSettings
 
     public string Theme { get; set; } = "System";
 
+    public bool UseSystemAccent { get; set; }
+
     public string CustomThemeBackground { get; set; } = "#111214";
 
     public string CustomThemeForeground { get; set; } = "#1A1B1F";

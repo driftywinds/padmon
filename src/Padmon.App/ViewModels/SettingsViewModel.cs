@@ -186,6 +186,23 @@ public sealed class SettingsViewModel : ObservableObject
         }
     }
 
+    public bool UseSystemAccent
+    {
+        get => _settings.UseSystemAccent;
+        set
+        {
+            if (_settings.UseSystemAccent == value)
+            {
+                return;
+            }
+
+            _settings.UseSystemAccent = value;
+            OnPropertyChanged();
+            ApplyTheme(_settings.Theme);
+            _ = SaveAsync();
+        }
+    }
+
     public bool IsCustomTheme => string.Equals(_settings.Theme, "Custom", StringComparison.Ordinal);
 
     public string CustomBackground

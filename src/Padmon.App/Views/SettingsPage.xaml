@@ -261,6 +261,28 @@
                             </ComboBox>
                         </Grid>
 
+                        <Border Margin="0,14" Style="{StaticResource DividerStyle}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="2">
+                                <TextBlock Style="{StaticResource CardTitleStyle}" Text="Use Windows accent colour" />
+                                <TextBlock
+                                    Style="{StaticResource CardSubtitleStyle}"
+                                    Text="Colour toggles, links, highlights and the logo with your Windows accent colour. Overrides the theme's own highlight." />
+                            </StackPanel>
+                            <ToggleSwitch
+                                Grid.Column="1"
+                                Margin="20,0,0,0"
+                                VerticalAlignment="Center"
+                                AutomationProperties.Name="Use Windows accent colour"
+                                IsOn="{x:Bind ViewModel.UseSystemAccent, Mode=TwoWay}"
+                                OffContent=""
+                                OnContent="" />
+                        </Grid>
+
                         <StackPanel
                             x:Name="CustomColorsPanel"
                             Margin="0,16,0,0"
