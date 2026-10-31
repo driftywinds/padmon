@@ -15,6 +15,7 @@
                 <StackPanel Spacing="6">
                     <TextBlock Style="{StaticResource PageTitleStyle}" Text="Update" />
                     <TextBlock
+                        x:Name="PageSubtitle"
                         Style="{StaticResource PageSubtitleStyle}"
                         Text="Check for a newer padmon release. Nothing is downloaded or installed automatically." />
                 </StackPanel>
@@ -51,6 +52,26 @@
                     x:Name="StatusBar"
                     IsClosable="False"
                     IsOpen="False" />
+
+                <Border
+                    x:Name="StoreCard"
+                    Padding="24"
+                    Style="{StaticResource CardBorderStyle}"
+                    Visibility="Collapsed">
+                    <StackPanel Spacing="12">
+                        <StackPanel Spacing="4">
+                            <TextBlock Style="{StaticResource CardTitleStyle}" Text="Updates come from Microsoft Store" />
+                            <TextBlock
+                                Style="{StaticResource CardSubtitleStyle}"
+                                Text="This copy of padmon was installed as an MSIX package. The Store handles updates automatically, so padmon does not download or replace its own files."
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <Button
+                            AutomationProperties.Name="Open Microsoft Store updates"
+                            Click="OpenStoreUpdates_Click"
+                            Content="Open Store updates" />
+                    </StackPanel>
+                </Border>
 
                 <Border
                     x:Name="AvailableCard"

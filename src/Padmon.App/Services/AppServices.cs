@@ -51,9 +51,10 @@ public sealed class AppServices
         await History.InitializeAsync(cancellationToken).ConfigureAwait(false);
         await History.CloseOrphanedSessionsAsync(cancellationToken).ConfigureAwait(false);
 
-        if (Settings.StartWithWindows != StartupService.IsEnabled())
+        var startupEnabled = await StartupService.IsEnabledAsync();
+        if (Settings.StartWithWindows != startupEnabled)
         {
-            StartupService.TrySetEnabled(Settings.StartWithWindows);
+            await StartupService.TrySetEnabledAsync(Settings.StartWithWindows);
         }
 
         var retentionDays = Math.Clamp(Settings.HistoryRetentionDays, 1, 3650);

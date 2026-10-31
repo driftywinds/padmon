@@ -12,7 +12,8 @@ public enum InstallMode
 {
     PortableLauncher,
     PortableFolder,
-    Installed
+    Installed,
+    MicrosoftStore
 }
 
 public sealed record UpdateCheckResult(
@@ -41,10 +42,13 @@ public sealed class UpdateService
     {
         InstallMode.PortableLauncher => "Portable single-file build",
         InstallMode.PortableFolder => "Portable folder build",
+        InstallMode.MicrosoftStore => "Microsoft Store build",
         _ => "Installed build"
     };
 
     public static bool IsPortableLauncher => Mode == InstallMode.PortableLauncher;
+
+    public static bool IsStoreBuild => Mode == InstallMode.MicrosoftStore;
 
     public static async Task<UpdateCheckResult> CheckAsync(CancellationToken cancellationToken = default)
     {
@@ -116,7 +120,7 @@ public sealed class UpdateService
                 asset?.Url,
                 HasRelease: true,
                 IsNewer: newer,
-                CanInstall: newer && asset is not null);
+                CanInstall: newer && asset is not null && !IsStoreBuild);
         }
         catch (OperationCanceledException)
         {
@@ -148,6 +152,12 @@ public sealed class UpdateService
             string.IsNullOrWhiteSpace(update.LatestVersion))
         {
             throw new InvalidOperationException("No installable update is available.");
+        }
+
+        if (IsStoreBuild)
+        {
+            throw new InvalidOperationException(
+                "This copy of padmon is installed from the Microsoft Store. Use the Store to update it.");
         }
 
         var root = Path.Combine(
@@ -302,6 +312,11 @@ Remove-Item -LiteralPath $MyInvocation.MyCommand.Path -Force
 
     private static InstallMode DetectInstallMode()
     {
+        if (AppEnvironment.IsPackaged)
+        {
+            return InstallMode.MicrosoftStore;
+        }
+
         if (File.Exists(PortableExecutable))
         {
             return InstallMode.PortableLauncher;

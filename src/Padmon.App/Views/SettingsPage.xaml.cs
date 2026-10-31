@@ -18,6 +18,11 @@ public sealed partial class SettingsPage : Page
         InitializeComponent();
         AboutVersionText.Text = $"Version {UpdateService.CurrentVersion}";
         AboutSdlText.Text = $"SDL {SdlInfo.Version}";
+        if (AppEnvironment.IsPackaged)
+        {
+            StartWithWindowsDescription.Text =
+                "Launch padmon when you sign in. Windows manages this startup task in Task Manager.";
+        }
         SyncCustomColorInputs();
         UpdateCustomPanelVisibility();
     }

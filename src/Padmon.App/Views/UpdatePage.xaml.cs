@@ -17,6 +17,13 @@ public sealed partial class UpdatePage : Page
         InitializeComponent();
         CurrentVersionText.Text = $"Version {UpdateService.CurrentVersion}";
         BuildKindText.Text = UpdateService.ModeLabel;
+
+        if (UpdateService.IsStoreBuild)
+        {
+            PageSubtitle.Text = "padmon was installed as an MSIX package. Updates are delivered by Microsoft Store.";
+            CheckButton.Visibility = Visibility.Collapsed;
+            StoreCard.Visibility = Visibility.Visible;
+        }
     }
 
     protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -32,6 +39,13 @@ public sealed partial class UpdatePage : Page
 
     private async Task CheckAsync()
     {
+        if (UpdateService.IsStoreBuild)
+        {
+            StoreCard.Visibility = Visibility.Visible;
+            CheckButton.Visibility = Visibility.Collapsed;
+            return;
+        }
+
         if (_checking)
         {
             return;
@@ -156,6 +170,11 @@ public sealed partial class UpdatePage : Page
             InstallButton.Content = "Download and install";
             CheckButton.IsEnabled = true;
         }
+    }
+
+    private async void OpenStoreUpdates_Click(object sender, RoutedEventArgs e)
+    {
+        await Launcher.LaunchUriAsync(new Uri("ms-windows-store://downloadsandupdates"));
     }
 
     private async void ReleaseLink_Click(object sender, RoutedEventArgs e)

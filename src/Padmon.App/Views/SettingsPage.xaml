@@ -53,6 +53,7 @@
                                 <StackPanel Spacing="2">
                                     <TextBlock Style="{StaticResource CardTitleStyle}" Text="Start with Windows" />
                                     <TextBlock
+                                        x:Name="StartWithWindowsDescription"
                                         Style="{StaticResource CardSubtitleStyle}"
                                         Text="Launch padmon quietly into the tray when you sign in." />
                                 </StackPanel>

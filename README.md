@@ -6,7 +6,7 @@ It is deliberately **not** a controller configuration suite. There are no remaps
 
 ![padmon controllers view](docs/images/controllers.png)
 
-## What is in the working preview
+## What padmon does
 
 - SDL3 controller discovery and hotplug monitoring on Windows 11, with a Windows.Gaming.Input fallback for Xbox-class pads SDL misses.
 - Xbox, PlayStation, Switch, 8BitDo, GameSir, EasySMX, and generic controllers through SDL's gamepad mappings, with raw joystick fallback for unrecognized devices.
@@ -17,9 +17,10 @@ It is deliberately **not** a controller configuration suite. There are no remaps
 - A live tester with buttons, sticks, triggers, shoulders, hats, and raw axis values.
 - A "More information" stats-for-nerds dialog with identity, transport, mapping, history, and live sample details.
 - A tray-resident background mode, close-to-tray behavior, and opt-in start with Windows.
-- An Update tab that checks GitHub releases, identifies portable vs installed builds, and installs only when the user presses the update button.
+- An Update tab that checks GitHub releases, identifies portable vs installed builds, and installs only when the user presses the update button. Microsoft Store builds show Store update guidance instead.
 - Windows notifications for connect/disconnect: an in-app card by default, or the normal Windows shell tray notification when enabled.
 - SQLite history with retention settings; no cloud, telemetry, or account.
+- A Microsoft Store MSIX build with a Store-managed update path.
 
 ## Requirements
 
@@ -64,23 +65,27 @@ $env:PADMON_DATA_DIR = 'W:\repos\padmon\.tmp\padmon-data'
 
 `PADMON_SIMULATE_FLAP=1` makes the simulator disconnect and reconnect periodically so notification and tray behavior can be exercised without hardware.
 
-The app icon and tray icon are generated from `tools/generate-icon.py` (Pillow).
+The app icon and tray icon are generated from `tools/generate-icon.py` (Pillow). The Store package artwork lives in `src/Padmon.Package/Assets` and is derived from the transparent mark.
 
 ## Releases
 
-`.github/workflows/build-release.yml` builds the app on Windows. A `v*` tag, or a manual dispatch with an optional version such as `v0.2.0`, creates a GitHub Release with:
+`.github/workflows/build-release.yml` builds the app on Windows. A `v*` tag, or a manual dispatch with an optional version such as `v1.0.0`, creates a GitHub Release with:
 
 - `padmon-win-x64.zip` — the app as a self-contained folder.
 - `Padmon-portable.exe` — a single file that unpacks the app to `%LOCALAPPDATA%\padmon\portable` on first run and launches it. Settings and history stay in `%LOCALAPPDATA%\padmon`.
+- `Padmon_<version>_x64.msix` — the Microsoft Store MSIX package.
+- `Padmon_<version>_x64.msixupload` — the recommended upload file for Partner Center, including an optional symbols package.
 
 Manual dispatch without a version only produces Actions artifacts. Workflow runs also upload each build as an artifact (the folder as raw files, so there is no zip inside the artifact zip).
 
 ```powershell
-git tag v0.2.0
-git push origin v0.2.0
+git tag v1.0.0
+git push origin v1.0.0
 ```
 
-Or run **Build and release padmon** manually and provide `v0.2.0` in the optional version field.
+Or run **Build and release padmon** manually and provide `v1.0.0` in the optional version field.
+
+Before producing a Store-ready package, reserve the app in Partner Center and set the `MSIX_IDENTITY_NAME`, `MSIX_PUBLISHER`, and `MSIX_PUBLISHER_DISPLAY_NAME` repository variables. See [docs/store-submission.md](docs/store-submission.md) for the full walkthrough, listing copy, and certification notes.
 
 ## Data and privacy
 
@@ -90,7 +95,14 @@ Everything stays local:
 - `%LOCALAPPDATA%\padmon\settings.json` — app preferences.
 - `%LOCALAPPDATA%\padmon\logs` — reserved for diagnostics.
 
-`PADMON_DATA_DIR` overrides the data directory for development or portable experiments.
+For the Microsoft Store MSIX build, these files live in the package's local data
+folder (`%LOCALAPPDATA%\Packages\<package family name>\LocalState`), so Windows
+removes them when the package is uninstalled. `PADMON_DATA_DIR` overrides the
+data directory for development or portable experiments.
+
+The MSIX build does not contact GitHub and cannot replace its own files; Store
+updates are handled by Microsoft Store. The portable and unpackaged builds keep
+the explicit GitHub update check. See [PRIVACY.md](PRIVACY.md).
 
 ## Architecture
 
@@ -107,4 +119,3 @@ See [docs/architecture.md](docs/architecture.md) for the details.
 - Controllers without serial numbers and without a PnP container ID may share a model fingerprint; that is shown as a model-level identity rather than pretending per-unit identity.
 - Windows tray notifications are opt-in in Settings and default to the in-app card. They use the same Shell_NotifyIcon path as the tray icon, so no administrator rights are required. A restricted session without a usable tray falls back to the in-app card.
 - Single-instance behavior and a graceful “forget controller” flow are good next additions.
-- There is intentionally no MSIX packaging. Release packaging can be a portable self-contained folder first and MSIX later if the distribution story calls for it.

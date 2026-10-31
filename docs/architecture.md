@@ -34,8 +34,7 @@ Framework-agnostic models and persistence.
 - `ControllerSnapshot` is the live input state: buttons, axes, hats, battery, and transport.
 - `SqliteDeviceHistoryStore` owns the local catalogue and session log. A nullable `merged_into` column groups adapter/controller identities; `GetControllersAsync` resolves the group and aggregates session counts, first-seen, and last-seen values, while `MergeAsync`/`UnmergeAsync` manage the relationship.
 - `JsonSettingsStore` owns the small user-settings file.
-- `UpdateService` checks GitHub releases, detects portable-launcher/portable-folder/installed builds, and prepares an explicit user-triggered install. The updater copies the release into place after padmon exits and restarts it.
-- `PadmonPaths` resolves `%LOCALAPPDATA%\padmon` and supports a `PADMON_DATA_DIR` override.
+- `PadmonPaths` resolves `%LOCALAPPDATA%\padmon` and supports a `PADMON_DATA_DIR` override. In a packaged build, startup points `PADMON_DATA_DIR` at the package's local data folder before any paths are resolved.
 
 ### `Padmon.Input`
 
@@ -54,6 +53,8 @@ Framework-agnostic models and persistence.
 - `ControllerDetailPage` is the live input tester.
 - `HistoryPage` shows known controllers and recent sessions.
 - `SettingsPage` edits background monitoring, notifications, retention, startup, and theme.
+- `UpdateService` checks GitHub releases, detects portable-launcher/portable-folder/installed/Microsoft Store builds, and prepares an explicit user-triggered install. The updater copies the release into place after padmon exits and restarts it. Packaged builds disable that path and defer to Microsoft Store.
+- `AppEnvironment` detects package identity at runtime, moves Store data into the package local folder, and switches notification/startup code to the packaged APIs.
 - `TrayIconService` is a small Win32 `Shell_NotifyIcon` implementation, deliberately avoiding a third-party tray control tied to an older Windows App SDK.
 - `NotificationService` has an opt-in Windows tray notification mode. It uses the same `Shell_NotifyIcon` balloon path as the tray icon, so it does not need elevation. The default is the in-app card; if the tray is unavailable, the in-app card is used.
 - The in-app notification card remains the fallback for restricted sessions where the shell tray is unavailable.
@@ -70,7 +71,19 @@ When background monitoring is on:
 3. Notifications use the controller's app-level name.
 4. The tray menu can reopen the window, open settings, or exit.
 
-Start with Windows writes a per-user `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` value that launches `Padmon.exe --background`. The app starts hidden in that mode.
+Start with Windows writes a per-user `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` value that launches `Padmon.exe --background` in portable/unpackaged builds. Packaged builds instead use the `windows.startupTask` extension and `Windows.ApplicationModel.StartupTask`; users can still disable it in Task Manager. The app starts hidden in that mode.
+
+## Microsoft Store packaging
+
+`tools/package-msix.ps1` builds the Store package from a dedicated publish output. The MSIX layout is intentionally different from the portable payload:
+
+- `WindowsAppSdkUndockedRegFreeWinRTInitialize=false` so the packaged app uses package identity instead of unpackaged WinRT activation.
+- `ProjectPriFileName=resources.pri` and `ProjectPriIndexName=<package identity>` so the root resource index is valid for the package.
+- `Padmon.exe` is declared as `Windows.FullTrustApplication`; the package declares the `runFullTrust` restricted capability.
+- A `windows.startupTask` extension backs the optional start-with-Windows setting.
+- The package artwork is in `src/Padmon.Package/Assets`; the manifest template is `src/Padmon.Package/AppxManifest.xml`.
+
+The workflow produces both an unsigned `.msix` and a `.msixupload` for Partner Center. Microsoft Store re-signs accepted packages. See [store-submission.md](store-submission.md).
 
 ## History and identity
 

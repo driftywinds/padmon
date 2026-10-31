@@ -43,6 +43,13 @@
       DestinationFolder="$(PublishDir)"
       SkipUnchangedFiles="true"
       Condition="Exists('$(TargetDir)Padmon.pri')" />
+    <!-- A Store/MSIX publish names the index resources.pri and uses the
+         package identity as its resource map. -->
+    <Copy
+      SourceFiles="$(TargetDir)resources.pri"
+      DestinationFolder="$(PublishDir)"
+      SkipUnchangedFiles="true"
+      Condition="Exists('$(TargetDir)resources.pri')" />
   </Target>
 
 </Project>

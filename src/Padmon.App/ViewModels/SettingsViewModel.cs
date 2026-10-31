@@ -42,14 +42,7 @@ public sealed class SettingsViewModel : ObservableObject
                 return;
             }
 
-            if (!StartupService.TrySetEnabled(value))
-            {
-                return;
-            }
-
-            _settings.StartWithWindows = value;
-            OnPropertyChanged();
-            _ = SaveAsync();
+            _ = SetStartWithWindowsAsync(value);
         }
     }
 
@@ -231,6 +224,21 @@ public sealed class SettingsViewModel : ObservableObject
         get => _settings.CustomThemeHighlight;
         set => SetCustomColor(value, current => _settings.CustomThemeHighlight = current,
             () => _settings.CustomThemeHighlight);
+    }
+
+    private async Task SetStartWithWindowsAsync(bool value)
+    {
+        if (!await StartupService.TrySetEnabledAsync(value))
+        {
+            // Revert the toggle if Windows refused the change (for example,
+            // the packaged startup task was disabled by the user or policy).
+            OnPropertyChanged(nameof(StartWithWindows));
+            return;
+        }
+
+        _settings.StartWithWindows = value;
+        OnPropertyChanged(nameof(StartWithWindows));
+        await SaveAsync();
     }
 
     private void SetCustomColor(

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Optional version tag to release, for example v0.2.0. Leave empty to build artifacts only."
+        description: "Optional version tag to release, for example v1.0.0. Leave empty to build artifacts only."
         required: false
         type: string
 
@@ -18,6 +18,13 @@ jobs:
   build:
     name: Build Windows x64
     runs-on: windows-latest
+
+    env:
+      # Set these repository variables after reserving the app in Partner Center.
+      # Package/Identity/Name and Package/Identity/Publisher must match exactly.
+      MSIX_IDENTITY_NAME: ${{ vars.MSIX_IDENTITY_NAME || 'driftywinds.padmon' }}
+      MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER || 'CN=padmon-preview' }}
+      MSIX_PUBLISHER_DISPLAY_NAME: ${{ vars.MSIX_PUBLISHER_DISPLAY_NAME || 'driftywinds' }}
 
     steps:
       - name: Check out repository
@@ -72,7 +79,7 @@ jobs:
         run: dotnet --info
 
       - name: Restore
-        run: dotnet restore Padmon.sln --configfile NuGet.Config
+        run: dotnet restore Padmon.sln --configfile NuGet.Config --property:RestoreUseStaticGraphEvaluation=true
 
       - name: Build
         run: >
@@ -90,10 +97,12 @@ jobs:
           --configuration Release
           --runtime win-x64
           --self-contained true
+          --no-restore
           --property:Platform=x64
           --property:Version=${{ env.APP_VERSION }}
           --property:WindowsAppSDKSelfContained=true
           --property:UseSharedCompilation=false
+          --property:BuildInParallel=false
           --output artifacts/padmon-win-x64
 
       - name: Verify published app
@@ -103,6 +112,61 @@ jobs:
           $pri = "artifacts/padmon-win-x64/Padmon.pri"
           if (-not (Test-Path $exe)) { throw "Missing $exe" }
           if (-not (Test-Path $pri)) { throw "Missing $pri (WinUI resources are required at startup)" }
+
+      # The Store build must not use the unpackaged WinRT auto-initializer, and
+      # its package resource index is resources.pri with the package identity as
+      # the resource map. Build it separately from the portable payload.
+      - name: Publish MSIX-layout app
+        run: >
+          dotnet publish src/Padmon.App/Padmon.App.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          --no-restore
+          --property:Platform=x64
+          --property:Version=${{ env.APP_VERSION }}
+          --property:WindowsAppSDKSelfContained=true
+          --property:WindowsAppSdkUndockedRegFreeWinRTInitialize=false
+          --property:ProjectPriFileName=resources.pri
+          --property:ProjectPriIndexName=${{ env.MSIX_IDENTITY_NAME }}
+          --property:UseSharedCompilation=false
+          --property:BuildInParallel=false
+          --output artifacts/padmon-msix-publish
+
+      - name: Verify MSIX-layout resources
+        shell: pwsh
+        run: |
+          $exe = "artifacts/padmon-msix-publish/Padmon.exe"
+          $pri = "artifacts/padmon-msix-publish/resources.pri"
+          if (-not (Test-Path $exe)) { throw "Missing $exe" }
+          if (-not (Test-Path $pri)) { throw "Missing $pri (packaged WinUI resource index)" }
+
+      - name: Package Microsoft Store MSIX
+        shell: pwsh
+        run: |
+          if ($env:MSIX_PUBLISHER -eq "CN=padmon-preview") {
+            Write-Warning "MSIX_PUBLISHER is still the preview fallback. Set the Partner Center repository variables before uploading this package to Microsoft Store."
+          }
+
+          $arguments = @{
+            PublishDirectory = "artifacts/padmon-msix-publish"
+            OutputDirectory = "artifacts/padmon-msix"
+            Version = "$env:APP_VERSION"
+            IdentityName = "$env:MSIX_IDENTITY_NAME"
+            Publisher = "$env:MSIX_PUBLISHER"
+            PublisherDisplayName = "$env:MSIX_PUBLISHER_DISPLAY_NAME"
+          }
+          & "$env:GITHUB_WORKSPACE/tools/package-msix.ps1" @arguments
+
+      - name: Verify MSIX and Store upload package
+        shell: pwsh
+        run: |
+          $msix = Get-ChildItem artifacts/padmon-msix -Filter *.msix -File
+          $upload = Get-ChildItem artifacts/padmon-msix -Filter *.msixupload -File
+          if (-not $msix) { throw "Missing .msix package" }
+          if (-not $upload) { throw "Missing .msixupload package" }
+          $msix | ForEach-Object { "{0}: {1:N1} MB" -f $_.Name, ($_.Length / 1MB) }
+          $upload | ForEach-Object { "{0}: {1:N1} MB" -f $_.Name, ($_.Length / 1MB) }
 
       - name: Add README to the portable artifact
         shell: pwsh
@@ -146,7 +210,14 @@ jobs:
           path: artifacts/padmon-portable/Padmon-portable.exe
           if-no-files-found: error
 
-      # Releases get the one zip plus the bare portable exe (no nested archives).
+      - name: Upload Microsoft Store MSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: padmon-msix
+          path: artifacts/padmon-msix/
+          if-no-files-found: error
+
+      # Releases get the portable zip, the bare portable exe, and the Store MSIX.
       - name: Create release zip
         if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.version != '')
         shell: pwsh
@@ -161,6 +232,8 @@ jobs:
           files: |
             artifacts/padmon-win-x64.zip
             artifacts/padmon-portable/Padmon-portable.exe
+            artifacts/padmon-msix/*.msix
+            artifacts/padmon-msix/*.msixupload
           generate_release_notes: true
           draft: false
           prerelease: false

@@ -20,6 +20,9 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        // Must run before PadmonPaths is first touched. Packaged builds keep
+        // settings, history, and logs in the package's local data folder.
+        AppEnvironment.ConfigureDataDirectory();
         PadmonLog.Initialize(Path.Combine(PadmonPaths.LogsDirectory, "padmon.log"));
         var arguments = Environment.GetCommandLineArgs();
         PadmonLog.Info($"launched: {string.Join(' ', arguments)}");

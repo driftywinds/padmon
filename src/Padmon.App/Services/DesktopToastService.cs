@@ -3,17 +3,18 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Win32;
 using Padmon.Core.Diagnostics;
+using Windows.ApplicationModel;
 using Windows.Data.Xml.Dom;
 using Windows.UI.Notifications;
 
 namespace Padmon.Services;
 
 /// <summary>
-/// Native Windows toast path for an unpackaged desktop app. Windows only shows
-/// toasts for an AppUserModelID it knows about, so this registers the AUMID in
-/// HKCU (the reliable path, no timing dependency) and also stamps it onto a
-/// Start Menu shortcut. Toasts are always sent through an explicit-AUMID
-/// notifier so they do not depend on whichever AUMID the process ended up with.
+/// Native Windows toast path for both unpackaged and packaged desktop builds.
+/// An unpackaged app must register an AUMID in HKCU and stamp it onto a Start
+/// Menu shortcut; a packaged app already has an identity and uses the default
+/// package notifier. Toasts are always sent through the matching notifier so
+/// they do not depend on whichever AUMID the process ended up with.
 /// </summary>
 internal static class DesktopToastService
 {
@@ -54,6 +55,12 @@ internal static class DesktopToastService
 
             _identityReady = true;
 
+            if (AppEnvironment.IsPackaged)
+            {
+                PadmonLog.Info($"notification identity: packaged package={Package.Current.Id.FullName}");
+                return;
+            }
+
             var result = SetCurrentProcessExplicitAppUserModelID(Aumid);
             PadmonLog.Info($"notification identity: AUMID set result=0x{result:X8}");
             RegisterAumid();
@@ -78,6 +85,12 @@ internal static class DesktopToastService
 
     public static void Initialize()
     {
+        if (AppEnvironment.IsPackaged)
+        {
+            PadmonLog.Info($"native packaged toast package={Package.Current.Id.FullName}");
+            return;
+        }
+
         var result = SetCurrentProcessExplicitAppUserModelID(Aumid);
         PadmonLog.Info($"native desktop toast AUMID initialized: result=0x{result:X8}");
         Prepare();
@@ -86,6 +99,12 @@ internal static class DesktopToastService
     /// <summary>Registers the AUMID and shortcut once per process.</summary>
     public static bool Prepare()
     {
+        if (AppEnvironment.IsPackaged)
+        {
+            // The package manifest already provides the notification identity.
+            return true;
+        }
+
         lock (Sync)
         {
             if (_prepared)
@@ -122,7 +141,7 @@ internal static class DesktopToastService
 </toast>
 """);
 
-            var notifier = ToastNotificationManager.CreateToastNotifier(Aumid);
+            var notifier = CreateNotifier();
 
             try
             {
@@ -164,6 +183,11 @@ internal static class DesktopToastService
             return false;
         }
     }
+
+    private static ToastNotifier CreateNotifier() =>
+        AppEnvironment.IsPackaged
+            ? ToastNotificationManager.CreateToastNotifier()
+            : ToastNotificationManager.CreateToastNotifier(Aumid);
 
     private static void BringToFront()
     {
