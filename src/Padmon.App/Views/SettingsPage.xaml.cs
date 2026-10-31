@@ -1,19 +1,25 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Padmon.Services;
 using Padmon.ViewModels;
+using Windows.UI;
 
 namespace Padmon.Views;
 
 public sealed partial class SettingsPage : Page
 {
+    private bool _syncingColors;
+
     public SettingsPage()
     {
         ViewModel = new SettingsViewModel(App.Services.SettingsStore);
         InitializeComponent();
         AboutVersionText.Text = $"Version {UpdateService.CurrentVersion}";
         AboutSdlText.Text = $"SDL {SdlInfo.Version}";
+        SyncCustomColorInputs();
+        UpdateCustomPanelVisibility();
     }
 
     public SettingsViewModel ViewModel { get; private set; }
@@ -36,6 +42,124 @@ public sealed partial class SettingsPage : Page
 
         ViewModel = new SettingsViewModel(App.Services.SettingsStore);
         Bindings.Update();
+        SyncCustomColorInputs();
+        UpdateCustomPanelVisibility();
+    }
+
+    private void ThemePicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        UpdateCustomPanelVisibility();
+    }
+
+    private void UpdateCustomPanelVisibility()
+    {
+        if (CustomColorsPanel is null)
+        {
+            return;
+        }
+
+        CustomColorsPanel.Visibility = ThemePicker.SelectedIndex == 3
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    }
+
+    private void SyncCustomColorInputs()
+    {
+        _syncingColors = true;
+
+        try
+        {
+            BackgroundColorBox.Text = ViewModel.CustomBackground;
+            ForegroundColorBox.Text = ViewModel.CustomForeground;
+            TextColorBox.Text = ViewModel.CustomText;
+            HighlightColorBox.Text = ViewModel.CustomHighlight;
+
+            SetPreview(BackgroundPreview, ViewModel.CustomBackground);
+            SetPreview(ForegroundPreview, ViewModel.CustomForeground);
+            SetPreview(TextPreview, ViewModel.CustomText);
+            SetPreview(HighlightPreview, ViewModel.CustomHighlight);
+        }
+        finally
+        {
+            _syncingColors = false;
+        }
+    }
+
+    private void ColorTextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_syncingColors || sender is not TextBox box)
+        {
+            return;
+        }
+
+        if (!TryParseColor(box.Text, out var color))
+        {
+            return;
+        }
+
+        var normalized = $"#{color.R:X2}{color.G:X2}{color.B:X2}";
+
+        if (ReferenceEquals(box, BackgroundColorBox))
+        {
+            ViewModel.CustomBackground = normalized;
+            SetPreview(BackgroundPreview, color);
+        }
+        else if (ReferenceEquals(box, ForegroundColorBox))
+        {
+            ViewModel.CustomForeground = normalized;
+            SetPreview(ForegroundPreview, color);
+        }
+        else if (ReferenceEquals(box, TextColorBox))
+        {
+            ViewModel.CustomText = normalized;
+            SetPreview(TextPreview, color);
+        }
+        else if (ReferenceEquals(box, HighlightColorBox))
+        {
+            ViewModel.CustomHighlight = normalized;
+            SetPreview(HighlightPreview, color);
+        }
+    }
+
+    private static void SetPreview(Border preview, string hex)
+    {
+        if (TryParseColor(hex, out var color))
+        {
+            SetPreview(preview, color);
+        }
+    }
+
+    private static void SetPreview(Border preview, Color color)
+    {
+        preview.Background = new SolidColorBrush(color);
+    }
+
+    private static bool TryParseColor(string? value, out Color color)
+    {
+        color = default;
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        var hex = value.Trim().TrimStart('#');
+        if (hex.Length != 6 ||
+            !uint.TryParse(
+                hex,
+                System.Globalization.NumberStyles.HexNumber,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var number))
+        {
+            return false;
+        }
+
+        color = Color.FromArgb(
+            255,
+            (byte)((number >> 16) & 0xFF),
+            (byte)((number >> 8) & 0xFF),
+            (byte)(number & 0xFF));
+        return true;
     }
 
     private async void ClearHistory_Click(object sender, RoutedEventArgs e)

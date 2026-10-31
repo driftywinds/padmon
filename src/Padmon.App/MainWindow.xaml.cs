@@ -79,12 +79,7 @@ public sealed partial class MainWindow : Window, IDisposable
 
     public void ApplyTheme(string theme)
     {
-        RootGrid.RequestedTheme = theme switch
-        {
-            "Light" => ElementTheme.Light,
-            "Dark" => ElementTheme.Dark,
-            _ => ElementTheme.Default
-        };
+        ThemeService.Apply(RootGrid, theme, App.Services.Settings);
     }
 
     private void OnActivated(object sender, WindowActivatedEventArgs args)

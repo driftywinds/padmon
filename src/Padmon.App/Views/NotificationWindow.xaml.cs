@@ -2,6 +2,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
+using Padmon.Services;
 using Windows.Graphics;
 
 namespace Padmon.Views;
@@ -13,6 +14,7 @@ public sealed partial class NotificationWindow : Window
     public NotificationWindow()
     {
         InitializeComponent();
+        ThemeService.Apply(Root, App.Services.Settings.Theme, App.Services.Settings);
 
         AppWindow.Resize(new SizeInt32(390, 96));
         AppWindow.IsShownInSwitchers = false;

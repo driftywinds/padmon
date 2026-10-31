@@ -17,4 +17,12 @@ public sealed class PadmonSettings
     public int HistoryRetentionDays { get; set; } = 90;
 
     public string Theme { get; set; } = "System";
+
+    public string CustomThemeBackground { get; set; } = "#111214";
+
+    public string CustomThemeForeground { get; set; } = "#1A1B1F";
+
+    public string CustomThemeText { get; set; } = "#ECEDEF";
+
+    public string CustomThemeHighlight { get; set; } = "#7AA2F7";
 }

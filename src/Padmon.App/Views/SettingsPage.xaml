@@ -234,28 +234,147 @@
                 <StackPanel Spacing="10">
                     <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Appearance" />
                     <Border Style="{StaticResource SettingsCardStyle}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Spacing="2">
-                                <TextBlock Style="{StaticResource CardTitleStyle}" Text="Theme" />
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Style="{StaticResource CardTitleStyle}" Text="Theme" />
                                 <TextBlock
                                     Style="{StaticResource CardSubtitleStyle}"
                                     Text="Match Windows, or stay in light or dark mode." />
                             </StackPanel>
                             <ComboBox
+                                x:Name="ThemePicker"
                                 Grid.Column="1"
                                 MinWidth="140"
                                 Margin="20,0,0,0"
                                 VerticalAlignment="Center"
-                                SelectedIndex="{x:Bind ViewModel.ThemeIndex, Mode=TwoWay}">
+                                SelectedIndex="{x:Bind ViewModel.ThemeIndex, Mode=TwoWay}"
+                                SelectionChanged="ThemePicker_SelectionChanged">
                                 <ComboBoxItem Content="System" />
                                 <ComboBoxItem Content="Light" />
                                 <ComboBoxItem Content="Dark" />
+                                <ComboBoxItem Content="Custom" />
                             </ComboBox>
                         </Grid>
+
+                        <StackPanel
+                            x:Name="CustomColorsPanel"
+                            Margin="0,16,0,0"
+                            Spacing="12"
+                            Visibility="{x:Bind ViewModel.IsCustomTheme, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Border Style="{StaticResource DividerStyle}" />
+                            <StackPanel Spacing="2">
+                                <TextBlock Style="{StaticResource CardTitleStyle}" Text="Custom colours" />
+                                <TextBlock
+                                    Style="{StaticResource CardSubtitleStyle}"
+                                    Text="Use six-digit hex values. Changes apply immediately." />
+                            </StackPanel>
+
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Width="24" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="1">
+                                    <TextBlock Style="{StaticResource BodyStyle}" Text="Background" />
+                                    <TextBlock Style="{StaticResource CaptionStyle}" Text="Main window surface" />
+                                </StackPanel>
+                                <TextBox
+                                    x:Name="BackgroundColorBox"
+                                    Grid.Column="1"
+                                    MaxLength="7"
+                                    PlaceholderText="#111214"
+                                    TextChanged="ColorTextChanged" />
+                                <Border
+                                    x:Name="BackgroundPreview"
+                                    Grid.Column="2"
+                                    Width="22"
+                                    Height="22"
+                                    VerticalAlignment="Center"
+                                    CornerRadius="11" />
+                            </Grid>
+
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Width="24" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="1">
+                                    <TextBlock Style="{StaticResource BodyStyle}" Text="Foreground" />
+                                    <TextBlock Style="{StaticResource CaptionStyle}" Text="Cards and raised surfaces" />
+                                </StackPanel>
+                                <TextBox
+                                    x:Name="ForegroundColorBox"
+                                    Grid.Column="1"
+                                    MaxLength="7"
+                                    PlaceholderText="#1A1B1F"
+                                    TextChanged="ColorTextChanged" />
+                                <Border
+                                    x:Name="ForegroundPreview"
+                                    Grid.Column="2"
+                                    Width="22"
+                                    Height="22"
+                                    VerticalAlignment="Center"
+                                    CornerRadius="11" />
+                            </Grid>
+
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Width="24" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="1">
+                                    <TextBlock Style="{StaticResource BodyStyle}" Text="Font colour" />
+                                    <TextBlock Style="{StaticResource CaptionStyle}" Text="Primary text colour" />
+                                </StackPanel>
+                                <TextBox
+                                    x:Name="TextColorBox"
+                                    Grid.Column="1"
+                                    MaxLength="7"
+                                    PlaceholderText="#ECEDEF"
+                                    TextChanged="ColorTextChanged" />
+                                <Border
+                                    x:Name="TextPreview"
+                                    Grid.Column="2"
+                                    Width="22"
+                                    Height="22"
+                                    VerticalAlignment="Center"
+                                    CornerRadius="11" />
+                            </Grid>
+
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition Width="24" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="1">
+                                    <TextBlock Style="{StaticResource BodyStyle}" Text="Highlight" />
+                                    <TextBlock Style="{StaticResource CaptionStyle}" Text="Toggles, labels, and the padmon mark" />
+                                </StackPanel>
+                                <TextBox
+                                    x:Name="HighlightColorBox"
+                                    Grid.Column="1"
+                                    MaxLength="7"
+                                    PlaceholderText="#7AA2F7"
+                                    TextChanged="ColorTextChanged" />
+                                <Border
+                                    x:Name="HighlightPreview"
+                                    Grid.Column="2"
+                                    Width="22"
+                                    Height="22"
+                                    VerticalAlignment="Center"
+                                    CornerRadius="11" />
+                            </Grid>
+                        </StackPanel>
+                        </StackPanel>
                     </Border>
                 </StackPanel>
 

@@ -160,6 +160,7 @@ public sealed class SettingsViewModel : ObservableObject
         {
             "Light" => 1,
             "Dark" => 2,
+            "Custom" => 3,
             _ => 0
         };
         set
@@ -168,6 +169,7 @@ public sealed class SettingsViewModel : ObservableObject
             {
                 1 => "Light",
                 2 => "Dark",
+                3 => "Custom",
                 _ => "System"
             };
 
@@ -178,9 +180,56 @@ public sealed class SettingsViewModel : ObservableObject
 
             _settings.Theme = theme;
             OnPropertyChanged();
+            OnPropertyChanged(nameof(IsCustomTheme));
             ApplyTheme(theme);
             _ = SaveAsync();
         }
+    }
+
+    public bool IsCustomTheme => string.Equals(_settings.Theme, "Custom", StringComparison.Ordinal);
+
+    public string CustomBackground
+    {
+        get => _settings.CustomThemeBackground;
+        set => SetCustomColor(value, current => _settings.CustomThemeBackground = current,
+            () => _settings.CustomThemeBackground);
+    }
+
+    public string CustomForeground
+    {
+        get => _settings.CustomThemeForeground;
+        set => SetCustomColor(value, current => _settings.CustomThemeForeground = current,
+            () => _settings.CustomThemeForeground);
+    }
+
+    public string CustomText
+    {
+        get => _settings.CustomThemeText;
+        set => SetCustomColor(value, current => _settings.CustomThemeText = current,
+            () => _settings.CustomThemeText);
+    }
+
+    public string CustomHighlight
+    {
+        get => _settings.CustomThemeHighlight;
+        set => SetCustomColor(value, current => _settings.CustomThemeHighlight = current,
+            () => _settings.CustomThemeHighlight);
+    }
+
+    private void SetCustomColor(
+        string value,
+        Action<string> assign,
+        Func<string> read)
+    {
+        if (string.Equals(read(), value, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        assign(value);
+        OnPropertyChanged();
+        ApplyTheme("Custom");
+        _ = SaveAsync();
     }
 
     private static void ApplyTheme(string theme)

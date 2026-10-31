@@ -35,6 +35,7 @@
                     <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="#9DBBFA" />
                     <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#0E1014" />
                     <SolidColorBrush x:Key="SystemFillColorSuccessBrush" Color="#6FCF97" />
+                    <SolidColorBrush x:Key="PadmonHighlightBrush" Color="#21F6FA" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
                     <SolidColorBrush x:Key="PadmonWindowBackgroundBrush" Color="#111214" />
@@ -66,9 +67,11 @@
                     <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="#9DBBFA" />
                     <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#0E1014" />
                     <SolidColorBrush x:Key="SystemFillColorSuccessBrush" Color="#6FCF97" />
+                    <SolidColorBrush x:Key="PadmonHighlightBrush" Color="#21F6FA" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
                     <SolidColorBrush x:Key="PadmonWindowBackgroundBrush" Color="#F5F5F6" />
+                    <SolidColorBrush x:Key="PadmonHighlightBrush" Color="#3F8F68" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="HighContrast">
                     <SolidColorBrush x:Key="PadmonWindowBackgroundBrush" Color="{ThemeResource SystemColorWindowColor}" />
