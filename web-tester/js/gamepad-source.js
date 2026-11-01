@@ -36,7 +36,11 @@ export class GamepadSource {
         this.onDisconnected = onDisconnected ?? (() => {});
         this.connected = new Map();
         this.started = false;
-        this._handleConnected = (event) => this.register(event.gamepad);
+        this.eventCount = 0;
+        this._handleConnected = (event) => {
+            this.eventCount++;
+            this.register(event.gamepad);
+        };
         this._handleDisconnected = (event) => this.unregister(event.gamepad);
     }
 

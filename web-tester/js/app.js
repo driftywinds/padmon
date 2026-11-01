@@ -8,7 +8,7 @@
  * page goes back to waiting when the last one goes away.
  */
 
-import { GamepadSource, gamepadToDevice, gamepadToSnapshot } from './gamepad-source.js';
+import { GamepadSource, gamepadToDevice, gamepadToSnapshot, listGamepads } from './gamepad-source.js';
 import { ControllerTesterViewModel } from './controller-tester-view-model.js';
 import { ControllerDiagram } from './controller-diagram.js';
 import { StickGraph } from './stick-graph.js';
@@ -294,6 +294,13 @@ class TesterApp {
                 + 'exposing it (try chrome://gamepad-internals or a USB cable).';
         }
 
+        const slots = listGamepads();
+        const visible = slots.filter(Boolean).length;
+        text += ` [diagnostics: ${slots.length} slots, ${visible} visible, `
+            + `${this.source.eventCount} connect events, `
+            + `${document.hasFocus() ? 'focused' : 'not focused'}, `
+            + `${window.isSecureContext ? 'secure' : 'insecure'} context]`;
+
         if (elements.waitingHint.textContent !== text) {
             elements.waitingHint.textContent = text;
         }
@@ -381,30 +388,55 @@ class TesterApp {
     }
 
     async rumble() {
-        if (!this.tester || this.mode !== 'live') {
+        if (!this.tester || this.mode !== 'live' || this.rumbling) {
             return;
         }
 
         const pad = this.source.getGamepad(this.activeIndex);
+        // Chromium exposes vibrationActuator.playEffect; Firefox exposes
+        // hapticActuators[0].pulse on some platforms.
         const actuator = pad?.vibrationActuator;
+        const haptic = pad?.hapticActuators?.[0];
+        const canPlay = actuator && typeof actuator.playEffect === 'function';
+        const canPulse = haptic && typeof haptic.pulse === 'function';
 
-        if (!actuator || typeof actuator.playEffect !== 'function') {
+        if (!canPlay && !canPulse) {
             this.showRumbleUnavailable();
             return;
         }
 
+        this.rumbling = true;
+        elements.rumbleButton.disabled = true;
+
         try {
-            await actuator.playEffect('dual-rumble', {
-                startDelay: 0,
-                duration: 1500,
-                weakMagnitude: 1,
-                strongMagnitude: 1,
-            });
+            if (canPlay) {
+                // Both motors, then each motor alone, so a pad that only drives one
+                // motor (or maps the generic HID rumble report oddly) is obvious.
+                // Full magnitude, 1.2 s each, with an explicit reset between steps.
+                const steps = [
+                    { weakMagnitude: 1, strongMagnitude: 1 },
+                    { weakMagnitude: 0, strongMagnitude: 1 },
+                    { weakMagnitude: 1, strongMagnitude: 0 },
+                ];
+
+                for (const step of steps) {
+                    await actuator.playEffect('dual-rumble', {
+                        startDelay: 0,
+                        duration: 1200,
+                        ...step,
+                    });
+                }
+            } else {
+                await haptic.pulse(1, 1500);
+            }
 
             elements.rumbleBar.hidden = true;
             this.tester.vibrationText = 'ok';
         } catch {
             this.showRumbleUnavailable();
+        } finally {
+            this.rumbling = false;
+            elements.rumbleButton.disabled = false;
         }
 
         this.render();
