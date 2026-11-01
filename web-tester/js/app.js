@@ -400,43 +400,47 @@ class TesterApp {
         const canPlay = actuator && typeof actuator.playEffect === 'function';
         const canPulse = haptic && typeof haptic.pulse === 'function';
 
+        console.info('[padmon] rumble', {
+            id: pad?.id,
+            mapping: pad?.mapping,
+            actuatorType: actuator?.type,
+            effects: actuator?.effects,
+            hasPlayEffect: Boolean(canPlay),
+            hasPulse: Boolean(canPulse),
+        });
+
         if (!canPlay && !canPulse) {
             this.showRumbleUnavailable();
             return;
         }
 
         this.rumbling = true;
-        elements.rumbleButton.disabled = true;
 
         try {
-            if (canPlay) {
-                // Both motors, then each motor alone, so a pad that only drives one
-                // motor (or maps the generic HID rumble report oddly) is obvious.
-                // Full magnitude, 1.2 s each, with an explicit reset between steps.
-                const steps = [
-                    { weakMagnitude: 1, strongMagnitude: 1 },
-                    { weakMagnitude: 0, strongMagnitude: 1 },
-                    { weakMagnitude: 1, strongMagnitude: 0 },
-                ];
+            let result;
 
-                for (const step of steps) {
-                    await actuator.playEffect('dual-rumble', {
-                        startDelay: 0,
-                        duration: 1200,
-                        ...step,
-                    });
-                }
+            if (canPlay) {
+                // One full-strength burst on both motors.
+                result = await actuator.playEffect(actuator.type ?? 'dual-rumble', {
+                    startDelay: 0,
+                    duration: 1500,
+                    weakMagnitude: 1,
+                    strongMagnitude: 1,
+                });
             } else {
-                await haptic.pulse(1, 1500);
+                result = (await haptic.pulse(1, 1500)) ? 'complete' : 'rejected';
             }
 
+            console.info('[padmon] rumble result', result);
             elements.rumbleBar.hidden = true;
-            this.tester.vibrationText = 'ok';
-        } catch {
+            // Show what the browser actually answered: 'complete' means the browser
+            // handed the effect to the device; anything else says why it did not.
+            this.tester.vibrationText = String(result ?? 'ok');
+        } catch (error) {
+            console.warn('[padmon] rumble failed', error);
             this.showRumbleUnavailable();
         } finally {
             this.rumbling = false;
-            elements.rumbleButton.disabled = false;
         }
 
         this.render();
