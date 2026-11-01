@@ -14,6 +14,11 @@ public sealed class PadmonSettings
 
     public bool UseNativeNotifications { get; set; }
 
+    /// <summary>
+    /// Show the controller diagram tester (hardwaretester-style) instead of the classic tester cards.
+    /// </summary>
+    public bool ShowControllerDiagram { get; set; } = true;
+
     public int HistoryRetentionDays { get; set; } = 90;
 
     public string Theme { get; set; } = "System";

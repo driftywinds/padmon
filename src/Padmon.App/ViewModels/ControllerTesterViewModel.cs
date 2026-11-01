@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Padmon.Core.Devices;
@@ -39,10 +40,73 @@ public sealed partial class ControllerTesterViewModel : ObservableObject
     [ObservableProperty]
     private string _rightTriggerText = "0%";
 
+    [ObservableProperty]
+    private string _connectedText = "Yes";
+
+    [ObservableProperty]
+    private string _mappingText = "standard";
+
+    [ObservableProperty]
+    private string _timestampText = "0.00000";
+
+    [ObservableProperty]
+    private string _vibrationText = "n/a";
+
+    [ObservableProperty]
+    private string _leftMagnitudeText = "0.00000";
+
+    [ObservableProperty]
+    private string _rightMagnitudeText = "0.00000";
+
+    [ObservableProperty]
+    private string _leftXText = "0.00000";
+
+    [ObservableProperty]
+    private string _leftYText = "0.00000";
+
+    [ObservableProperty]
+    private string _rightXText = "0.00000";
+
+    [ObservableProperty]
+    private string _rightYText = "0.00000";
+
+    [ObservableProperty]
+    private string _leftBumperText = "0.00";
+
+    [ObservableProperty]
+    private string _rightBumperText = "0.00";
+
+    [ObservableProperty]
+    private string _leftTriggerValueText = "0.00";
+
+    [ObservableProperty]
+    private string _rightTriggerValueText = "0.00";
+
+    private readonly Stopwatch _clock = Stopwatch.StartNew();
+
     public ControllerTesterViewModel(ControllerViewModel controller)
     {
         _controller = controller;
+
+        for (var index = 0; index < PadInputState.ButtonSlots; index++)
+        {
+            PadButtonCells.Add(new PadCellViewModel($"B{index}"));
+        }
+
+        LeftAxisCells.Add(new PadCellViewModel("AXIS 0", "0.00000"));
+        LeftAxisCells.Add(new PadCellViewModel("AXIS 1", "0.00000"));
+        RightAxisCells.Add(new PadCellViewModel("AXIS 2", "0.00000"));
+        RightAxisCells.Add(new PadCellViewModel("AXIS 3", "0.00000"));
     }
+
+    /// <summary>The most recent snapshot mapped onto the standard gamepad layout.</summary>
+    public PadInputState Pad { get; private set; } = new();
+
+    public ObservableCollection<PadCellViewModel> PadButtonCells { get; } = [];
+
+    public ObservableCollection<PadCellViewModel> LeftAxisCells { get; } = [];
+
+    public ObservableCollection<PadCellViewModel> RightAxisCells { get; } = [];
 
     public ObservableCollection<ButtonStateViewModel> Buttons { get; } = [];
 
@@ -92,6 +156,39 @@ public sealed partial class ControllerTesterViewModel : ObservableObject
         RightStickText = $"{RightStickX:+0.00;-0.00;0.00}, {RightStickY:+0.00;-0.00;0.00}";
         LeftTriggerText = $"{LeftTriggerPercent:0}%";
         RightTriggerText = $"{RightTriggerPercent:0}%";
+
+        ApplyPad(snapshot);
+    }
+
+    private void ApplyPad(ControllerSnapshot snapshot)
+    {
+        var pad = PadInputState.From(snapshot);
+        Pad = pad;
+
+        MappingText = pad.IsStandard ? "standard" : "raw";
+        TimestampText = _clock.Elapsed.TotalMilliseconds.ToString("0.00000", CultureInfo.InvariantCulture);
+
+        for (var index = 0; index < PadInputState.ButtonSlots; index++)
+        {
+            PadButtonCells[index].Set(pad.Buttons[index], PadInputState.FormatShort(pad.Buttons[index]));
+        }
+
+        LeftAxisCells[0].Set(pad.LeftX, PadInputState.Format(pad.LeftX));
+        LeftAxisCells[1].Set(pad.LeftY, PadInputState.Format(pad.LeftY));
+        RightAxisCells[0].Set(pad.RightX, PadInputState.Format(pad.RightX));
+        RightAxisCells[1].Set(pad.RightY, PadInputState.Format(pad.RightY));
+
+        LeftXText = PadInputState.Format(pad.LeftX);
+        LeftYText = PadInputState.Format(pad.LeftY);
+        RightXText = PadInputState.Format(pad.RightX);
+        RightYText = PadInputState.Format(pad.RightY);
+        LeftMagnitudeText = PadInputState.Format(Math.Sqrt((pad.LeftX * pad.LeftX) + (pad.LeftY * pad.LeftY)));
+        RightMagnitudeText = PadInputState.Format(Math.Sqrt((pad.RightX * pad.RightX) + (pad.RightY * pad.RightY)));
+
+        LeftBumperText = PadInputState.FormatShort(pad.Buttons[PadInputState.SlotLeftBumper]);
+        RightBumperText = PadInputState.FormatShort(pad.Buttons[PadInputState.SlotRightBumper]);
+        LeftTriggerValueText = PadInputState.FormatShort(pad.Buttons[PadInputState.SlotLeftTrigger]);
+        RightTriggerValueText = PadInputState.FormatShort(pad.Buttons[PadInputState.SlotRightTrigger]);
     }
 
     private void SyncButtons(IReadOnlyList<ButtonState> buttons)

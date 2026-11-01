@@ -105,6 +105,34 @@
                 </StackPanel>
 
                 <StackPanel Spacing="10">
+                    <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Controller tester" />
+                    <Border Style="{StaticResource SettingsCardStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="2">
+                                <TextBlock Style="{StaticResource CardTitleStyle}" Text="Controller diagram" />
+                                <TextBlock
+                                    Style="{StaticResource CardSubtitleStyle}"
+                                    Text="Test with a controller diagram: pressed buttons turn red, the sticks move, triggers fill in, and live values sit underneath. Turn off to use the classic tester cards." />
+                            </StackPanel>
+                            <ToggleSwitch
+                                Grid.Column="1"
+                                MinWidth="0"
+                                HorizontalAlignment="Right"
+                                Margin="20,0,0,0"
+                                VerticalAlignment="Center"
+                                AutomationProperties.Name="Controller diagram"
+                                IsOn="{x:Bind ViewModel.ShowControllerDiagram, Mode=TwoWay}"
+                                OffContent=""
+                                OnContent="" />
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Spacing="10">
                     <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Notifications" />
                     <Border Style="{StaticResource SettingsCardStyle}">
                         <StackPanel>

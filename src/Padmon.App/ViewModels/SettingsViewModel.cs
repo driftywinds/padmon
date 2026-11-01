@@ -94,6 +94,22 @@ public sealed class SettingsViewModel : ObservableObject
         }
     }
 
+    public bool ShowControllerDiagram
+    {
+        get => _settings.ShowControllerDiagram;
+        set
+        {
+            if (_settings.ShowControllerDiagram == value)
+            {
+                return;
+            }
+
+            _settings.ShowControllerDiagram = value;
+            OnPropertyChanged();
+            _ = SaveAsync();
+        }
+    }
+
     public string NotificationTestStatus
     {
         get => _notificationTestStatus;

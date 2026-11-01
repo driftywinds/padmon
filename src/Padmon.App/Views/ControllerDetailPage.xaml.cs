@@ -25,6 +25,7 @@ public sealed partial class ControllerDetailPage : Page
         null);
 
     private ControllerViewModel? _controller;
+    private bool _useDiagram;
 
     public ControllerDetailPage()
     {
@@ -37,6 +38,10 @@ public sealed partial class ControllerDetailPage : Page
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
+
+        _useDiagram = App.Services.SettingsStore.Current.ShowControllerDiagram;
+        DiagramView.Visibility = _useDiagram ? Visibility.Visible : Visibility.Collapsed;
+        ClassicView.Visibility = _useDiagram ? Visibility.Collapsed : Visibility.Visible;
 
         if (e.Parameter is not string stableKey)
         {
@@ -59,6 +64,7 @@ public sealed partial class ControllerDetailPage : Page
         ControllerSubtitle.Text = _controller.Subtitle;
         BatteryText.Text = _controller.BatteryLabel;
         MappingBadge.Text = _controller.DeviceBadge;
+        IndexText.Text = Math.Max(0, App.Services.Monitor.Controllers.IndexOf(_controller)).ToString();
 
         if (_controller.Snapshot is not null)
         {
@@ -105,6 +111,7 @@ public sealed partial class ControllerDetailPage : Page
         }
 
         DisconnectedBar.IsOpen = true;
+        Tester.ConnectedText = "No";
         App.Services.Monitor.SetLivePreview(false);
     }
 
@@ -116,6 +123,31 @@ public sealed partial class ControllerDetailPage : Page
         LeftStickTransform.Y = Tester.LeftStickY * radius;
         RightStickTransform.X = Tester.RightStickX * radius;
         RightStickTransform.Y = Tester.RightStickY * radius;
+
+        if (!_useDiagram)
+        {
+            return;
+        }
+
+        var pad = Tester.Pad;
+        Diagram.Update(pad);
+        LeftGraph.SetPosition(pad.LeftX, pad.LeftY);
+        RightGraph.SetPosition(pad.RightX, pad.RightY);
+    }
+
+    private void PageRoot_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        // Diagram beside the readouts when there is room, stacked underneath otherwise.
+        var wide = e.NewSize.Width >= 1060;
+
+        Grid.SetRow(DiagramPanel, wide ? 0 : 1);
+        Grid.SetColumn(DiagramPanel, wide ? 1 : 0);
+        Grid.SetColumnSpan(DiagramPanel, wide ? 1 : 2);
+        DiagramView.ColumnSpacing = wide ? 40 : 0;
+        DiagramPanel.Width = wide ? 470 : double.NaN;
+        DiagramPanel.MaxWidth = wide ? double.PositiveInfinity : 560;
+        DiagramPanel.HorizontalAlignment = wide ? HorizontalAlignment.Stretch : HorizontalAlignment.Left;
+        StatsPanel.SetValue(Grid.ColumnSpanProperty, wide ? 1 : 2);
     }
 
     private async void Rumble_Click(object sender, RoutedEventArgs e)
@@ -132,6 +164,7 @@ public sealed partial class ControllerDetailPage : Page
             TimeSpan.FromMilliseconds(1500));
 
         RumbleBar.IsOpen = !available;
+        Tester.VibrationText = available ? "ok" : "unavailable";
     }
 
     private void Back_Click(object sender, RoutedEventArgs e)
