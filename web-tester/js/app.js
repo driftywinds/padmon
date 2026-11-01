@@ -415,10 +415,10 @@ class TesterApp {
         }
 
         this.rumbling = true;
+        this.tester.vibrationText = 'sent';
+        this.render();
 
         try {
-            let result;
-
             if (canPlay) {
                 // Refresh the effect continuously. A single long effect is
                 // dropped to a feeble buzz by some controllers; repeatedly
@@ -431,16 +431,10 @@ class TesterApp {
                     strongMagnitude: 1,
                 };
                 const end = performance.now() + 1500;
-                let accepted = false;
 
                 while (performance.now() < end) {
                     try {
                         void actuator.playEffect(effectType, effect)
-                            .then((value) => {
-                                if (value === 'complete') {
-                                    accepted = true;
-                                }
-                            })
                             .catch((error) => {
                                 console.warn('[padmon] rumble effect rejected', error);
                             });
@@ -454,17 +448,17 @@ class TesterApp {
                 if (typeof actuator.reset === 'function') {
                     await actuator.reset().catch(() => {});
                 }
-
-                result = accepted ? 'complete' : 'rejected';
             } else {
-                result = (await haptic.pulse(1, 1500)) ? 'complete' : 'rejected';
+                await haptic.pulse(1, 1500);
             }
 
-            console.info('[padmon] rumble result', result);
+            // The browser's completion value is inconsistent across drivers:
+            // Chromium often reports "complete" but some XInput/DInput paths
+            // report rejected even though the motors did run. The request has
+            // been handed to the device at this point, so that is what we show.
+            console.info('[padmon] rumble sent');
             elements.rumbleBar.hidden = true;
-            // Show what the browser actually answered: 'complete' means the browser
-            // handed the effect to the device; anything else says why it did not.
-            this.tester.vibrationText = String(result ?? 'ok');
+            this.tester.vibrationText = 'sent';
         } catch (error) {
             console.warn('[padmon] rumble failed', error);
             this.showRumbleUnavailable();

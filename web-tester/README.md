@@ -74,6 +74,8 @@ Current Chromium browsers (Chrome, Edge, Opera, Brave) and Firefox. The Gamepad 
 a secure context, so `https://` or `localhost`. Key facts the page handles:
 
 - Browsers expose a controller only after a button press in some cases (Firefox).
+- DInput devices are not supported by Firefox. For the best results, open the tester in a
+  Chromium-based browser.
 - Rumble exists only where `vibrationActuator` is implemented (Chromium). Elsewhere the
   **Rumble unavailable** info bar is shown and **VIBRATION** reads `unavailable`.
 - The Gamepad API does not expose battery, transport, serial number, or hats, so the

@@ -29,6 +29,10 @@ public interface IDeviceHistoryStore
 
     Task ForgetAsync(string stableKey, CancellationToken cancellationToken = default);
 
+    Task ForgetAsync(
+        IReadOnlyList<string> stableKeys,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<ControllerRecord>> GetControllersAsync(CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<ConnectionSession>> GetSessionsAsync(

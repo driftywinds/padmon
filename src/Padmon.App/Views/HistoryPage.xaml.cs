@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
+using Padmon.Core.Diagnostics;
 using Padmon.ViewModels;
 
 namespace Padmon.Views;
@@ -108,6 +109,69 @@ public sealed partial class HistoryPage : Page
         if (await DeviceMergeDialog.ShowAsync(XamlRoot, controller, KnownControllers))
         {
             await LoadAsync();
+        }
+    }
+
+    private async void Delete_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: string stableKey })
+        {
+            return;
+        }
+
+        var controller = KnownControllers.FirstOrDefault(
+            candidate => string.Equals(candidate.Record.StableKey, stableKey, StringComparison.Ordinal));
+
+        if (controller is null)
+        {
+            return;
+        }
+
+        var keys = controller.Record.Aliases
+            .Select(alias => alias.StableKey)
+            .Prepend(controller.Record.StableKey)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        var scope = controller.IsMerged
+            ? $"\"{controller.DisplayName}\" and its {controller.Record.DeviceCount} merged identities"
+            : $"\"{controller.DisplayName}\"";
+
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = "Delete from history?",
+            Content = $"{scope}, including all saved sessions, will be removed.\n\nIf you connect it again, padmon will treat it as a new controller.",
+            PrimaryButtonText = "Delete",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close
+        };
+
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary)
+        {
+            return;
+        }
+
+        try
+        {
+            await App.Services.History.ForgetAsync(keys);
+            PadmonLog.Info($"history deleted: keys=[{string.Join(',', keys)}]");
+            await LoadAsync();
+        }
+        catch (Exception exception)
+        {
+            PadmonLog.Error("history delete failed", exception);
+
+            var error = new ContentDialog
+            {
+                XamlRoot = XamlRoot,
+                Title = "Could not delete controller",
+                Content = exception.Message,
+                CloseButtonText = "Close",
+                DefaultButton = ContentDialogButton.Close
+            };
+
+            await error.ShowAsync();
         }
     }
 }

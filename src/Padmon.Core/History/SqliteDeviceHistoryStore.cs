@@ -360,8 +360,25 @@ public sealed class SqliteDeviceHistoryStore : IDeviceHistoryStore, IDisposable
         }
     }
 
-    public async Task ForgetAsync(string stableKey, CancellationToken cancellationToken = default)
+    public Task ForgetAsync(string stableKey, CancellationToken cancellationToken = default)
     {
+        return ForgetAsync([stableKey], cancellationToken);
+    }
+
+    public async Task ForgetAsync(
+        IReadOnlyList<string> stableKeys,
+        CancellationToken cancellationToken = default)
+    {
+        var keys = stableKeys
+            .Where(key => !string.IsNullOrWhiteSpace(key))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        if (keys.Length == 0)
+        {
+            return;
+        }
+
         await EnsureInitializedAsync(cancellationToken).ConfigureAwait(false);
         await _writeGate.WaitAsync(cancellationToken).ConfigureAwait(false);
 
@@ -371,20 +388,23 @@ public sealed class SqliteDeviceHistoryStore : IDeviceHistoryStore, IDisposable
             await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
             await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
-            await using (var sessions = connection.CreateCommand())
+            foreach (var key in keys)
             {
-                sessions.Transaction = (SqliteTransaction)transaction;
-                sessions.CommandText = "DELETE FROM sessions WHERE stable_key = $key;";
-                sessions.Parameters.AddWithValue("$key", stableKey);
-                await sessions.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-            }
+                await using (var sessions = connection.CreateCommand())
+                {
+                    sessions.Transaction = (SqliteTransaction)transaction;
+                    sessions.CommandText = "DELETE FROM sessions WHERE stable_key = $key;";
+                    sessions.Parameters.AddWithValue("$key", key);
+                    await sessions.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+                }
 
-            await using (var controller = connection.CreateCommand())
-            {
-                controller.Transaction = (SqliteTransaction)transaction;
-                controller.CommandText = "DELETE FROM controllers WHERE stable_key = $key;";
-                controller.Parameters.AddWithValue("$key", stableKey);
-                await controller.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+                await using (var controller = connection.CreateCommand())
+                {
+                    controller.Transaction = (SqliteTransaction)transaction;
+                    controller.CommandText = "DELETE FROM controllers WHERE stable_key = $key;";
+                    controller.Parameters.AddWithValue("$key", key);
+                    await controller.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+                }
             }
 
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);

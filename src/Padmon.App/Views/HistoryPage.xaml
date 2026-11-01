@@ -55,7 +55,7 @@
                         <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Known controllers" />
                         <TextBlock
                             Style="{StaticResource CaptionStyle}"
-                            Text="Use Merge to combine two identities from the same physical controller." />
+                            Text="Use Merge to combine two identities, or the delete button to forget a controller." />
                     </StackPanel>
 
                     <Border
@@ -163,14 +163,26 @@
                                                     Style="{StaticResource CaptionStyle}"
                                                     Text="{x:Bind FirstSeenText}" />
                                             </StackPanel>
-                                            <Button
+                                            <StackPanel
                                                 Grid.Column="3"
                                                 Margin="14,0,0,0"
                                                 VerticalAlignment="Center"
-                                                AutomationProperties.Name="{x:Bind MergeActionText}"
-                                                Click="Merge_Click"
-                                                Content="{x:Bind MergeActionText}"
-                                                Tag="{x:Bind Record.StableKey}" />
+                                                Orientation="Horizontal"
+                                                Spacing="6">
+                                                <Button
+                                                    AutomationProperties.Name="{x:Bind MergeActionText}"
+                                                    Click="Merge_Click"
+                                                    Content="{x:Bind MergeActionText}"
+                                                    Tag="{x:Bind Record.StableKey}" />
+                                                <Button
+                                                    AutomationProperties.Name="Delete from history"
+                                                    Click="Delete_Click"
+                                                    Style="{StaticResource IconButtonStyle}"
+                                                    Tag="{x:Bind Record.StableKey}"
+                                                    ToolTipService.ToolTip="Delete from history">
+                                                    <FontIcon FontSize="14" Glyph="&#xE74D;" />
+                                                </Button>
+                                            </StackPanel>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
