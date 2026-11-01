@@ -2,15 +2,14 @@
  * Port of the tester page wiring in
  * src/Padmon.App/Views/ControllerDetailPage.xaml(.cs).
  *
- * The desktop page binds the tester view model to XAML, polls the controller source
- * for snapshots, shows a simulated preview when no controller is connected, and keeps
- * the last state on screen after a disconnect. This file does the same against the DOM,
- * with the browser Gamepad API in place of SDL.
+ * The desktop page binds the tester view model to XAML and polls the controller source
+ * for snapshots. This file does the same against the DOM with the browser Gamepad API,
+ * plus a waiting state: the tester appears as soon as a controller is visible, and the
+ * page goes back to waiting when the last one goes away.
  */
 
 import { GamepadSource, gamepadToDevice, gamepadToSnapshot } from './gamepad-source.js';
 import { ControllerTesterViewModel } from './controller-tester-view-model.js';
-import { PREVIEW_DEVICE, createPreviewSnapshot } from './preview-snapshot-factory.js';
 import { ControllerDiagram } from './controller-diagram.js';
 import { StickGraph } from './stick-graph.js';
 
@@ -23,14 +22,15 @@ const WIDE_LAYOUT_WIDTH = 1060;
 
 const elements = {
     pageRoot: document.getElementById('pageRoot'),
+    pageHead: document.getElementById('pageHead'),
     controllerName: document.getElementById('controllerName'),
     controllerSubtitle: document.getElementById('controllerSubtitle'),
     batteryText: document.getElementById('batteryText'),
     rumbleButton: document.getElementById('rumbleButton'),
     rumbleBar: document.getElementById('rumbleBar'),
     rumbleBarClose: document.getElementById('rumbleBarClose'),
-    disconnectedBar: document.getElementById('disconnectedBar'),
-    previewBar: document.getElementById('previewBar'),
+    waitingView: document.getElementById('waitingView'),
+    waitingHint: document.getElementById('waitingHint'),
 
     diagramView: document.getElementById('diagramView'),
     classicView: document.getElementById('classicView'),
@@ -79,6 +79,7 @@ const elements = {
     hatsText: document.getElementById('hatsText'),
 
     controllerSelect: document.getElementById('controllerSelect'),
+    viewToggle: document.getElementById('viewToggle'),
     themeButton: document.getElementById('themeButton'),
     themeIcons: {
         system: document.getElementById('themeIconSystem'),
@@ -93,9 +94,9 @@ const lightScheme = window.matchMedia('(prefers-color-scheme: light)');
 class TesterApp {
     constructor() {
         this.tester = null;
-        this.mode = 'preview';
+        this.mode = 'waiting';
         this.activeIndex = null;
-        this.previewStart = 0;
+        this.view = readStorage(VIEW_KEY) === 'classic' ? 'classic' : 'diagram';
 
         this.buttonSignature = null;
         this.axisSignature = null;
@@ -130,17 +131,15 @@ class TesterApp {
 
         this.bindEvents();
         this.applyTheme(readPreference());
-        this.applyView(readStorage(VIEW_KEY) === 'classic' ? 'classic' : 'diagram');
+        this.applyView(this.view);
         this.observeLayout();
     }
 
     start() {
         this.source.start();
 
-        // Attaching a pad that the browser reports before the first frame can fail;
-        // fall back to the preview so the page always has a tester to draw.
-        if (this.mode !== 'live') {
-            this.startPreview();
+        if (this.mode === 'waiting') {
+            this.showWaiting();
         }
 
         this.render();
@@ -221,7 +220,7 @@ class TesterApp {
         this.activePadLost();
     }
 
-    /** The tester follows a connected pad; only freeze once nothing else is connected. */
+    /** The tester follows a connected pad, and goes back to waiting when none are left. */
     activePadLost() {
         const next = this.source.indexes.find((index) => index !== this.activeIndex);
 
@@ -230,8 +229,7 @@ class TesterApp {
             return;
         }
 
-        this.markDisconnected();
-        this.render();
+        this.showWaiting();
     }
 
     attachGamepad(index) {
@@ -245,54 +243,57 @@ class TesterApp {
         this.tester = new ControllerTesterViewModel(gamepadToDevice(pad));
         this.tester.resetClock();
 
-        elements.previewBar.hidden = true;
-        elements.disconnectedBar.hidden = true;
+        elements.waitingView.hidden = true;
+        elements.pageHead.hidden = false;
+        elements.viewToggle.hidden = false;
         elements.rumbleBar.hidden = true;
 
-        this.applyStaticUi({ preview: false });
+        this.applyStaticUi();
         this.tester.applySnapshot(gamepadToSnapshot(pad));
+        this.updateViewVisibility();
         this.refreshControllerSelect();
         this.render();
     }
 
-    startPreview() {
-        this.mode = 'preview';
+    showWaiting() {
+        this.mode = 'waiting';
         this.activeIndex = null;
-        this.previewStart = performance.now();
-        this.tester = new ControllerTesterViewModel(PREVIEW_DEVICE);
+        this.tester = null;
+        this.buttonSignature = null;
+        this.axisSignature = null;
 
-        elements.disconnectedBar.hidden = true;
+        elements.waitingView.hidden = false;
+        elements.pageHead.hidden = true;
+        elements.viewToggle.hidden = true;
         elements.rumbleBar.hidden = true;
-        elements.previewBar.hidden = false;
 
-        this.applyStaticUi({ preview: true });
+        this.updateViewVisibility();
         this.refreshControllerSelect();
+        this.updateWaitingHint();
     }
 
-    markDisconnected() {
-        this.mode = 'disconnected';
+    updateWaitingHint() {
+        const supported =
+            typeof navigator.getGamepads === 'function' && window.isSecureContext;
 
-        if (this.tester) {
-            this.tester.connectedText = 'No';
+        if (!supported) {
+            elements.waitingHint.textContent =
+                'This browser cannot read gamepads on this page. Open it over HTTPS or '
+                + 'localhost in a current Chromium browser or Firefox.';
         }
-
-        elements.disconnectedBar.hidden = false;
-        elements.previewBar.hidden = true;
     }
 
-    applyStaticUi({ preview }) {
+    applyStaticUi() {
         const tester = this.tester;
         if (!tester) {
             return;
         }
 
-        elements.controllerName.textContent = preview ? 'Preview controller' : tester.displayName;
-        elements.controllerSubtitle.textContent = preview
-            ? 'Simulated input · no controller connected'
-            : tester.subtitle;
-        elements.batteryText.textContent = preview ? 'Preview' : tester.batteryLabel;
-        elements.mappingBadge.textContent = preview ? 'PREVIEW' : tester.deviceBadge;
-        elements.indexText.textContent = String(preview ? 0 : tester.device.instanceId ?? 0);
+        elements.controllerName.textContent = tester.displayName;
+        elements.controllerSubtitle.textContent = tester.subtitle;
+        elements.batteryText.textContent = tester.batteryLabel;
+        elements.mappingBadge.textContent = tester.deviceBadge;
+        elements.indexText.textContent = String(tester.device.instanceId ?? 0);
 
         elements.hardwareText.textContent = tester.hardwareName;
         elements.kindText.textContent = tester.kindLabel;
@@ -322,18 +323,23 @@ class TesterApp {
     }
 
     applyView(view) {
-        const diagram = view !== 'classic';
-
-        elements.diagramView.hidden = !diagram;
-        elements.classicView.hidden = diagram;
+        this.view = view === 'classic' ? 'classic' : 'diagram';
+        this.updateViewVisibility();
 
         for (const button of elements.viewButtons) {
-            const selected = button.dataset.view === (diagram ? 'diagram' : 'classic');
+            const selected = button.dataset.view === this.view;
             button.classList.toggle('is-selected', selected);
             button.setAttribute('aria-pressed', String(selected));
         }
 
-        writeStorage(VIEW_KEY, diagram ? 'diagram' : 'classic');
+        writeStorage(VIEW_KEY, this.view);
+    }
+
+    updateViewVisibility() {
+        const live = this.mode === 'live';
+
+        elements.diagramView.hidden = !live || this.view !== 'diagram';
+        elements.classicView.hidden = !live || this.view !== 'classic';
     }
 
     refreshControllerSelect() {
@@ -359,17 +365,11 @@ class TesterApp {
     }
 
     async rumble() {
-        if (!this.tester) {
+        if (!this.tester || this.mode !== 'live') {
             return;
         }
 
-        if (this.mode === 'preview') {
-            this.tester.vibrationText = 'n/a (preview)';
-            this.render();
-            return;
-        }
-
-        const pad = this.mode === 'live' ? this.source.getGamepad(this.activeIndex) : null;
+        const pad = this.source.getGamepad(this.activeIndex);
         const actuator = pad?.vibrationActuator;
 
         if (!actuator || typeof actuator.playEffect !== 'function') {
@@ -403,26 +403,14 @@ class TesterApp {
         this.render();
     }
 
-    tick(now) {
+    tick() {
         requestAnimationFrame(this.tick);
 
-        if (!this.tester) {
-            return;
-        }
+        // Polling is the reliable detection path: connect events are inconsistent
+        // across browsers, so waiting must never depend on an event alone.
+        this.source.poll();
 
-        // A browser can report a pad a frame before getGamepads() returns it.
-        if (this.mode === 'preview' && this.source.size > 0) {
-            this.attachGamepad(this.source.indexes[0]);
-        }
-
-        if (this.mode === 'preview') {
-            const seconds = (now - this.previewStart) / 1000;
-            this.tester.applySnapshot(createPreviewSnapshot(seconds));
-            this.render();
-            return;
-        }
-
-        if (this.mode !== 'live') {
+        if (this.mode !== 'live' || !this.tester) {
             return;
         }
 

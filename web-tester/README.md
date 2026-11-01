@@ -19,10 +19,11 @@ network requests at runtime.
   and device details.
 - **Live input** from any controller the browser exposes with the standard gamepad
   mapping, plus a positional fallback for devices without one.
-- **Preview mode** with animated simulated input when no controller is connected, exactly
-  like the app's Settings → Controller tester preview.
+- **Waiting state** until a controller is visible: the page polls the Gamepad API every
+  frame and swaps straight into the tester when one appears, no button on the page needed.
 - **Test rumble** through `Gamepad.vibrationActuator` where the browser supports it.
-- **Disconnect handling** that keeps the last state on screen.
+- **Back to waiting** when the last controller disconnects, so plugging one back in starts
+  a fresh session.
 - **Dark / light / system theme** and a remembered diagram-vs-classic choice.
 
 ## Run it locally
@@ -37,9 +38,10 @@ python -m http.server 8080 --directory web-tester
 npx serve web-tester
 ```
 
-Then open `http://localhost:8080` and press a button on a connected controller. Firefox
-only exposes a controller after the first button press; Chromium usually reports it as
-soon as it is connected. The page must be focused for browsers to keep polling gamepads.
+Then open `http://localhost:8080`. The page waits until a controller is visible, so
+connect one and press a button; Firefox only exposes a controller after the first button
+press, while Chromium usually reports it as soon as it is connected. The page must be
+focused for browsers to keep polling gamepads.
 
 ## Deploy to Cloudflare Pages
 
@@ -90,7 +92,6 @@ the DOM binding are new.
 | `js/pad-input-state.js` | `src/Padmon.App/ViewModels/PadInputState.cs` |
 | `js/controller-tester-view-model.js` | `src/Padmon.App/ViewModels/ControllerTesterViewModel.cs` |
 | `js/controller-view-model.js` | `src/Padmon.App/ViewModels/ControllerViewModel.cs` |
-| `js/preview-snapshot-factory.js` | `src/Padmon.App/Services/PreviewSnapshotFactory.cs` |
 | `js/controller-diagram.js` | `src/Padmon.App/Controls/ControllerDiagram.xaml(.cs)` |
 | `js/stick-graph.js` | `src/Padmon.App/Controls/StickGraph.xaml(.cs)` |
 | `js/gamepad-source.js` | `src/Padmon.Input/SdlControllerSource.cs` (browser replacement) |
@@ -104,10 +105,11 @@ device stable key follows `DeviceIdentity.Create`'s model-fingerprint branch:
 
 ## Deliberate differences
 
-- The tester's **Back to controllers** button becomes **Back to padmon** and points at the
-  project, because this is a single standalone tester page rather than the whole app. The
-  diagram/classic choice (a setting in the desktop app) lives in the app bar here, next to
-  the theme toggle.
+- There is no **Back to controllers** button and no navigation pane: this is a single
+  standalone tester page rather than the whole app. The diagram/classic choice (a setting
+  in the desktop app) lives in the app bar here, next to the theme toggle.
+- The app simulates a preview when no controller is connected; the web page instead waits
+  for a real one, so nothing on screen pretends to be a controller.
 - A controller picker appears when more than one controller is connected. If the selected
   controller disconnects while another is still connected, the tester moves to the
   remaining controller instead of freezing on a per-controller page.

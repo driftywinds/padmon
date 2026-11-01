@@ -46,8 +46,6 @@
     --stick-graph-ink: #7fb6ff;
 
     --info-bg: rgba(122, 162, 247, 0.12);
-    --warning-bg: rgba(247, 201, 72, 0.12);
-    --warning-ink: #f7c948;
 
     color-scheme: dark;
 }
@@ -79,8 +77,6 @@
     --stick-graph-ink: #0b3a6b;
 
     --info-bg: rgba(0, 95, 184, 0.08);
-    --warning-bg: rgba(157, 93, 0, 0.1);
-    --warning-ink: #9d5d00;
 
     color-scheme: light;
 }
@@ -258,6 +254,8 @@ a:hover {
 /* ------------------------------------------------------------------- page ---- */
 
 .page {
+    display: flex;
+    flex-direction: column;
     flex: 1 0 auto;
     background: var(--layer-bg);
 }
@@ -265,10 +263,12 @@ a:hover {
 .page-root {
     display: flex;
     flex-direction: column;
+    flex: 1;
     gap: 22px;
+    width: 100%;
     max-width: 1480px;
     margin: 0 auto;
-    padding: 28px 36px 40px;
+    padding: 12px 36px 40px;
 }
 
 .page-head {
@@ -278,16 +278,84 @@ a:hover {
     gap: 16px;
 }
 
-.page-back {
+/* Placeholder while no controller has been detected, in the app's empty-state style. */
+.waiting-view {
     display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px 48px;
+    text-align: center;
 }
 
-.page-back .button {
-    text-decoration: none;
+.waiting-glyph {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 96px;
+    height: 96px;
+    margin-bottom: 24px;
+    border-radius: 50%;
+    background: var(--subtle-fill);
+    color: var(--accent);
 }
 
-.page-back .button:hover {
-    text-decoration: none;
+.waiting-glyph svg {
+    width: 46px;
+    height: 46px;
+}
+
+.waiting-glyph::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+    animation: waiting-pulse 2.4s ease-out infinite;
+}
+
+@keyframes waiting-pulse {
+    0% {
+        transform: scale(0.98);
+        opacity: 0.45;
+    }
+
+    80%,
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .waiting-glyph::after {
+        animation: none;
+    }
+}
+
+.waiting-title {
+    margin: 0 0 8px;
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.waiting-message {
+    margin: 0;
+    max-width: 430px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.waiting-hint {
+    margin: 16px 0 0;
+    max-width: 430px;
+    font-size: 12px;
+    color: var(--text-tertiary);
 }
 
 .page-head-text {
@@ -362,20 +430,12 @@ a:hover {
     background: var(--info-bg);
 }
 
-.info-bar-warning {
-    background: var(--warning-bg);
-}
-
 .info-bar-icon {
     width: 18px;
     height: 18px;
     flex: none;
     margin-top: 1px;
     color: var(--accent);
-}
-
-.info-bar-warning .info-bar-icon {
-    color: var(--warning-ink);
 }
 
 .info-bar-text {
@@ -923,6 +983,7 @@ a:hover {
     flex-wrap: wrap;
     justify-content: space-between;
     gap: 8px 16px;
+    margin-top: auto;
     padding-top: 14px;
     border-top: 1px solid var(--divider);
     font-size: 12px;
@@ -959,13 +1020,12 @@ a:hover {
     }
 
     .app-bar-actions {
-        width: 100%;
-        justify-content: flex-start;
         flex-wrap: wrap;
+        justify-content: flex-end;
     }
 
     .page-root {
-        padding: 20px 18px 32px;
+        padding: 14px 18px 32px;
         gap: 18px;
     }
 
@@ -994,6 +1054,10 @@ a:hover {
 }
 
 @media (max-width: 520px) {
+    .app-bar-note {
+        display: none;
+    }
+
     .sticks-grid {
         grid-template-columns: minmax(0, 1fr);
         row-gap: 18px;

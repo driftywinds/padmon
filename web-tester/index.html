@@ -36,7 +36,7 @@
             <label class="visually-hidden" for="controllerSelect">Controller</label>
             <select class="select" id="controllerSelect" hidden></select>
 
-            <div class="segmented" role="group" aria-label="Tester view">
+            <div class="segmented" id="viewToggle" role="group" aria-label="Tester view" hidden>
                 <button type="button" class="segmented-button is-selected" data-view="diagram" aria-pressed="true">Diagram</button>
                 <button type="button" class="segmented-button" data-view="classic" aria-pressed="false">Classic</button>
             </div>
@@ -61,40 +61,30 @@
 
     <main class="page">
         <div class="page-root" id="pageRoot">
-            <div class="page-back">
-                <a class="button" href="https://github.com/driftywinds/padmon">Back to padmon</a>
-            </div>
-
-            <div class="page-head">
+            <div class="page-head" id="pageHead" hidden>
                 <div class="page-head-text">
-                    <h1 class="page-title" id="controllerName">Preview controller</h1>
-                    <p class="page-subtitle" id="controllerSubtitle">Simulated input · no controller connected</p>
+                    <h1 class="page-title" id="controllerName">Controller</h1>
+                    <p class="page-subtitle" id="controllerSubtitle">Live input tester</p>
                 </div>
                 <div class="page-head-actions">
-                    <span class="pill" id="batteryText">Preview</span>
+                    <span class="pill" id="batteryText">Battery unknown</span>
                     <button type="button" class="button" id="rumbleButton">Test rumble</button>
                 </div>
             </div>
 
-            <div class="info-bar info-bar-warning" id="disconnectedBar" hidden>
-                <svg class="info-bar-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-                    <path fill="currentColor" d="M10 2.6 18.4 17H1.6L10 2.6Zm0 3.6L4.4 15.8h11.2L10 6.2Zm-.8 2.4h1.6v4H9.2v-4Zm0 5h1.6v1.6H9.2v-1.6Z" />
-                </svg>
-                <div class="info-bar-text">
-                    <p class="info-bar-title">Controller disconnected</p>
-                    <p class="info-bar-message">The last input state is still shown below.</p>
+            <section class="waiting-view" id="waitingView">
+                <div class="waiting-glyph">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M7.3 7.6h9.4c2.4 0 4.2 1.8 4.7 4.2l.8 4.2c.4 2.1-1.9 3.4-3.4 2l-2.2-2.1H7.4l-2.2 2.1c-1.5 1.4-3.8.1-3.4-2l.8-4.2c.5-2.4 2.3-4.2 4.7-4.2Z" />
+                        <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M8.1 11.2v2.6M6.8 12.5h2.6" />
+                        <circle cx="15.5" cy="11.7" r="1" fill="currentColor" />
+                        <circle cx="17.8" cy="13.5" r="1" fill="currentColor" />
+                    </svg>
                 </div>
-            </div>
-
-            <div class="info-bar" id="previewBar" hidden>
-                <svg class="info-bar-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-                    <path fill="currentColor" d="M10 1.8a8.2 8.2 0 1 0 0 16.4 8.2 8.2 0 0 0 0-16.4Zm0 1.6a6.6 6.6 0 1 1 0 13.2 6.6 6.6 0 0 1 0-13.2Zm-.8 2.4h1.6v1.6H9.2V5.8Zm0 3h1.6v5.4H9.2V8.8Z" />
-                </svg>
-                <div class="info-bar-text">
-                    <p class="info-bar-title">Preview mode</p>
-                    <p class="info-bar-message">No controller is connected, so this shows simulated input to let you check the tester layout. Connect a controller to test it for real.</p>
-                </div>
-            </div>
+                <h2 class="waiting-title">Waiting for controller</h2>
+                <p class="waiting-message">Please press a button on your controller to see it here.</p>
+                <p class="waiting-hint" id="waitingHint">Connect a gamepad over USB or Bluetooth. The tester starts as soon as the browser sees it.</p>
+            </section>
 
             <div class="info-bar" id="rumbleBar" hidden>
                 <svg class="info-bar-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
@@ -111,7 +101,7 @@
                 </button>
             </div>
 
-            <section class="diagram-view" id="diagramView">
+            <section class="diagram-view" id="diagramView" hidden>
                 <div class="stats-panel">
                     <div class="stats-row">
                         <div class="stat">
@@ -276,7 +266,7 @@
                             <h2 class="card-title">Buttons</h2>
                             <p class="card-subtitle">Every exposed button, live.</p>
                         </div>
-                        <span class="pill" id="mappingBadge">PREVIEW</span>
+                        <span class="pill" id="mappingBadge">MAPPED</span>
                     </div>
                     <div class="toggle-grid" id="buttonGrid"></div>
                 </div>
@@ -297,13 +287,13 @@
                         </div>
                         <div class="device-grid">
                             <span class="device-label">Hardware</span>
-                            <span class="device-value" id="hardwareText">Preview controller</span>
+                            <span class="device-value" id="hardwareText">Controller</span>
                             <span class="device-label">Type</span>
                             <span class="device-value" id="kindText">Gamepad</span>
                             <span class="device-label">Connection</span>
-                            <span class="device-value" id="connectionText">Virtual</span>
+                            <span class="device-value" id="connectionText">Unknown</span>
                             <span class="device-label">Stable key</span>
-                            <span class="device-value mono" id="stableKeyText">preview:demo</span>
+                            <span class="device-value mono" id="stableKeyText">—</span>
                             <span class="device-label">Hats</span>
                             <span class="device-value mono" id="hatsText">—</span>
                         </div>

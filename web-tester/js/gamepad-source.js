@@ -50,9 +50,35 @@ export class GamepadSource {
         window.addEventListener('gamepaddisconnected', this._handleDisconnected);
 
         // Chrome can already have a pad enumerated before the page loaded.
-        for (const pad of listGamepads()) {
-            if (pad) {
-                this.register(pad);
+        this.poll();
+    }
+
+    /**
+     * Keeps the connected map in sync with navigator.getGamepads(). The page calls this
+     * every animation frame: some browsers expose a pad a moment before (or without)
+     * firing a connect event, and polling is the only reliable detection path.
+     */
+    poll() {
+        const pads = listGamepads();
+        const present = new Set();
+
+        for (const pad of pads) {
+            if (!pad) {
+                continue;
+            }
+
+            present.add(pad.index);
+
+            if (!this.connected.has(pad.index)) {
+                this.connected.set(pad.index, pad.id);
+                this.onConnected(pad.index);
+            }
+        }
+
+        for (const index of [...this.connected.keys()]) {
+            if (!present.has(index)) {
+                this.connected.delete(index);
+                this.onDisconnected(index);
             }
         }
     }
