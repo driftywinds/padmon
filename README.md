@@ -72,7 +72,7 @@ pwsh tools/run.ps1 -Simulate
 pwsh tools/run.ps1 -Background
 
 # Use an isolated data directory for experiments
-$env:PADMON_DATA_DIR = 'W:\repos\padmon\.tmp\padmon-data'
+$env:PADMON_DATA_DIR = Join-Path (Get-Location) '.tmp\padmon-data'
 ```
 
 `PADMON_SIMULATE_FLAP=1` makes the simulator disconnect and reconnect periodically so notification and tray behavior can be exercised without hardware.
