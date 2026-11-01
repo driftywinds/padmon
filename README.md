@@ -26,7 +26,7 @@ It is deliberately **not** a controller configuration suite. There are no remaps
 - New/known device handling, battery and transport information where the device exposes it.
 - App-level renaming that uses the chosen name throughout the UI and notifications.
 - Merge adapter and controller identities from the History or Previously connected lists; sessions and future connections are grouped, and merges can be separated again.
-- A live tester with buttons, sticks, triggers, shoulders, hats, and raw axis values.
+- A live tester. By default it shows a controller diagram (pressed buttons turn red, sticks move, triggers fade in) with stick graphs, B0–B17 values and numeric readouts, in the style of hardwaretester.com. The classic cards (buttons, sticks, triggers, hats, raw axes) are one toggle away in Settings → Controller tester.
 - A "More information" stats-for-nerds dialog with identity, transport, mapping, history, and live sample details.
 - A tray-resident background mode, close-to-tray behavior, and opt-in start with Windows.
 - An Update tab that checks GitHub releases, identifies portable vs installed builds, and installs only when the user presses the update button. Microsoft Store builds show Store update guidance instead.
