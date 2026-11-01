@@ -1,5 +1,17 @@
 # padmon
 
+<p align="center">
+  <a href="https://apps.microsoft.com/detail/9PJC85NSMQ8X">
+    <img src="https://get.microsoft.com/images/en-us%20dark.svg" height="40" alt="Get padmon from Microsoft Store">
+  </a>
+  <a href="https://github.com/driftywinds/padmon/releases/latest/download/Padmon-portable.exe">
+    <img src="https://img.shields.io/badge/Portable-Download-2F81F7?style=for-the-badge&logo=windows&logoColor=white" height="40" alt="Download the portable build">
+  </a>
+  <a href="https://github.com/driftywinds/padmon/releases/latest/download/padmon-win-x64.zip">
+    <img src="https://img.shields.io/badge/Normal_install-Download-6E40C9?style=for-the-badge&logo=windows&logoColor=white" height="40" alt="Download the normal install">
+  </a>
+</p>
+
 **padmon** is a native Windows app for monitoring game controllers — connected now, seen before, and what their inputs are doing.
 
 It is deliberately **not** a controller configuration suite. There are no remaps, macros, deadzone editors, or per-game profiles. The job is to make controllers visible, understandable, and pleasant to keep track of.
