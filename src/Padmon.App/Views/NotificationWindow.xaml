@@ -6,8 +6,9 @@
 
     <Border
         x:Name="Root"
+        Margin="-2"
         Padding="14"
-        Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+        Background="#FF202020"
         BorderThickness="0"
         CornerRadius="0"
         Tapped="Root_Tapped">
