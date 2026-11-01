@@ -1,10 +1,13 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Net.Http;
 using System.Reflection;
+using System.Security.Authentication;
 using System.Text;
 using System.Text.Json;
 using Padmon.Core.Diagnostics;
+using WinHttp = Windows.Web.Http;
 
 namespace Padmon.Services;
 
@@ -56,25 +59,53 @@ public sealed class UpdateService
 
         try
         {
-            using var client = CreateClient();
-            using var response = await client.GetAsync(ReleasesApi, cancellationToken).ConfigureAwait(false);
+            string json;
 
-            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            try
             {
-                return new UpdateCheckResult(
-                    current,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    HasRelease: false,
-                    IsNewer: false,
-                    CanInstall: false);
+                using var client = CreateClient();
+                using var response = await client.GetAsync(ReleasesApi, cancellationToken).ConfigureAwait(false);
+
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return new UpdateCheckResult(
+                        current,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        HasRelease: false,
+                        IsNewer: false,
+                        CanInstall: false);
+                }
+
+                response.EnsureSuccessStatusCode();
+                json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (HttpRequestException exception) when (IsTlsCredentialFailure(exception))
+            {
+                // Some Windows sessions (restricted tokens, unusual proxy/certificate
+                // policies) cannot acquire Schannel credentials from the .NET client.
+                // WinHTTP uses a different credential path and often succeeds there.
+                PadmonLog.Warn("update check: Schannel credentials unavailable, trying WinHTTP");
+                json = await GetReleaseJsonViaWinHttpAsync(cancellationToken).ConfigureAwait(false)
+                    ?? string.Empty;
+                if (json.Length == 0)
+                {
+                    return new UpdateCheckResult(
+                        current,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        HasRelease: false,
+                        IsNewer: false,
+                        CanInstall: false);
+                }
             }
 
-            response.EnsureSuccessStatusCode();
-            var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             using var document = JsonDocument.Parse(json);
             var root = document.RootElement;
 
@@ -139,8 +170,69 @@ public sealed class UpdateService
                 HasRelease: false,
                 IsNewer: false,
                 CanInstall: false,
-                Error: exception.Message);
+                Error: DescribeError(exception));
         }
+    }
+
+    private static async Task<string?> GetReleaseJsonViaWinHttpAsync(CancellationToken cancellationToken)
+    {
+        using var client = new WinHttp.HttpClient();
+        client.DefaultRequestHeaders.UserAgent.TryParseAdd("padmon-updater");
+        client.DefaultRequestHeaders.Accept.TryParseAdd("application/vnd.github+json");
+
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(30));
+
+        using var response = await client
+            .GetAsync(new Uri(ReleasesApi))
+            .AsTask(timeout.Token)
+            .ConfigureAwait(false);
+
+        if (response.StatusCode == WinHttp.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content
+            .ReadAsStringAsync()
+            .AsTask(timeout.Token)
+            .ConfigureAwait(false);
+    }
+
+    private static bool IsTlsCredentialFailure(Exception exception)
+    {
+        for (var current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is AuthenticationException)
+            {
+                return true;
+            }
+
+            if (current is Win32Exception { NativeErrorCode: unchecked((int)0x8009030E) })
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string DescribeError(Exception exception)
+    {
+        if (IsTlsCredentialFailure(exception))
+        {
+            return "Windows could not create a secure connection to GitHub (Schannel error 0x8009030E). "
+                + "This is usually a restricted network session, proxy, or certificate policy. "
+                + "Check your connection and try again.";
+        }
+
+        if (exception is HttpRequestException or System.Runtime.InteropServices.COMException)
+        {
+            return "Could not reach GitHub. Check your internet connection and try again.";
+        }
+
+        return exception.Message;
     }
 
     public static async Task InstallAsync(

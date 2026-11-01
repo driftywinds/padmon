@@ -9,227 +9,271 @@
     NavigationCacheMode="Required"
     mc:Ignorable="d">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <ScrollViewer
+        x:Name="PageScroll"
+        HorizontalContentAlignment="Stretch"
+        HorizontalScrollBarVisibility="Disabled"
+        VerticalScrollBarVisibility="Auto">
         <Grid
-            MaxWidth="1080"
-            Padding="32,24,32,40"
-            HorizontalAlignment="Stretch">
-            <StackPanel Spacing="24">
+            x:Name="PageRoot"
+            Width="{Binding ViewportWidth, ElementName=PageScroll}"
+            MinHeight="{Binding ViewportHeight, ElementName=PageScroll}"
+            SizeChanged="PageRoot_SizeChanged"
+            Style="{StaticResource PageRootStyle}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Spacing="6">
-                        <TextBlock Style="{StaticResource PageTitleStyle}" Text="Controllers" />
-                        <TextBlock
-                            Style="{StaticResource PageSubtitleStyle}"
-                            Text="What's connected right now. padmon notices changes automatically." />
-                    </StackPanel>
-                    <StackPanel
-                        Grid.Column="1"
-                        VerticalAlignment="Top"
-                        Orientation="Horizontal"
-                        Spacing="8">
-                        <TextBlock
-                            VerticalAlignment="Center"
-                            Style="{StaticResource CaptionStyle}"
-                            Text="{x:Bind ViewModel.ConnectedCount, Mode=OneWay}" />
-                        <TextBlock
-                            VerticalAlignment="Center"
-                            Style="{StaticResource CaptionStyle}"
-                            Text="connected" />
-                        <Border
-                            x:Name="MonitoringBadge"
-                            Padding="10,4"
-                            Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                            CornerRadius="12">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <Ellipse
-                                    x:Name="MonitoringDot"
-                                    Width="7"
-                                    Height="7"
-                                    VerticalAlignment="Center"
-                                    Fill="{ThemeResource SystemFillColorSuccessBrush}" />
-                                <TextBlock
-                                    x:Name="MonitoringText"
-                                    Style="{StaticResource PillTextStyle}"
-                                    Text="Watching" />
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </Grid>
-
-                <InfoBar
-                    x:Name="ErrorBar"
-                    IsClosable="True"
-                    IsOpen="False"
-                    Severity="Error"
-                    Title="Input problem" />
-
-                <StackPanel x:Name="EmptyPanel" Spacing="0">
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="6">
+                    <TextBlock Style="{StaticResource PageTitleStyle}" Text="Controllers" />
+                    <TextBlock
+                        Style="{StaticResource PageSubtitleStyle}"
+                        Text="What's connected right now. padmon notices changes automatically." />
+                </StackPanel>
+                <StackPanel
+                    Grid.Column="1"
+                    VerticalAlignment="Top"
+                    Orientation="Horizontal"
+                    Spacing="8">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Style="{StaticResource CaptionStyle}"
+                        Text="{x:Bind ViewModel.ConnectedCount, Mode=OneWay}" />
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Style="{StaticResource CaptionStyle}"
+                        Text="connected" />
                     <Border
-                        MinHeight="330"
-                        Style="{StaticResource CardBorderStyle}">
-                        <StackPanel
-                            MaxWidth="460"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Spacing="14">
-                            <Border Style="{StaticResource EmptyStateGlyphCircleStyle}">
-                                <FontIcon
-                                    FontSize="40"
-                                    Foreground="{ThemeResource AccentFillColorDefaultBrush}"
-                                    Glyph="&#xE7FC;" />
-                            </Border>
+                        x:Name="MonitoringBadge"
+                        Padding="10,4"
+                        Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                        CornerRadius="12">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Ellipse
+                                x:Name="MonitoringDot"
+                                Width="7"
+                                Height="7"
+                                VerticalAlignment="Center"
+                                Fill="{ThemeResource SystemFillColorSuccessBrush}" />
                             <TextBlock
-                                Style="{StaticResource LargeEmptyTitleStyle}"
-                                Text="No controllers connected" />
-                            <TextBlock
-                                Style="{StaticResource LargeEmptyBodyStyle}"
-                                Text="Plug one in, or pair it over Bluetooth. padmon will notice it without any setup." />
-                            <StackPanel
-                                Margin="0,4,0,0"
-                                HorizontalAlignment="Center"
-                                Orientation="Horizontal"
-                                Spacing="7">
-                                <Ellipse
-                                    Width="7"
-                                    Height="7"
-                                    VerticalAlignment="Center"
-                                    Fill="{ThemeResource SystemFillColorSuccessBrush}" />
-                                <TextBlock
-                                    Style="{StaticResource CaptionStyle}"
-                                    Text="Watching for controllers" />
-                            </StackPanel>
+                                x:Name="MonitoringText"
+                                Style="{StaticResource PillTextStyle}"
+                                Text="Watching" />
                         </StackPanel>
                     </Border>
                 </StackPanel>
+            </Grid>
 
-                <StackPanel
-                    x:Name="ConnectedPanel"
-                    Spacing="12"
-                    Visibility="Collapsed">
-                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.Controllers}">
-                        <ItemsRepeater.Layout>
-                            <UniformGridLayout
-                                ItemsStretch="Fill"
-                                MinColumnSpacing="12"
-                                MinItemWidth="320"
-                                MinRowSpacing="12" />
-                        </ItemsRepeater.Layout>
-                        <ItemsRepeater.ItemTemplate>
-                            <DataTemplate x:DataType="vm:ControllerViewModel">
-                                <Border Style="{StaticResource CardBorderStyle}">
-                                    <StackPanel Spacing="14">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
+            <InfoBar
+                x:Name="ErrorBar"
+                Grid.Row="1"
+                Margin="0,16,0,0"
+                IsClosable="True"
+                IsOpen="False"
+                Severity="Error"
+                Title="Input problem" />
 
-                                            <Border
-                                                Width="52"
-                                                Height="52"
-                                                Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                                CornerRadius="16">
-                                                <TextBlock
-                                                    HorizontalAlignment="Center"
+            <Grid
+                x:Name="BodyGrid"
+                Grid.Row="2"
+                Margin="0,24,0,0"
+                ColumnSpacing="0"
+                RowSpacing="24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid
+                    x:Name="PrimaryPanel"
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Grid.ColumnSpan="2">
+                    <Grid
+                        x:Name="EmptyPanel"
+                        VerticalAlignment="Stretch">
+                        <Border
+                            MinHeight="360"
+                            VerticalAlignment="Stretch"
+                            Style="{StaticResource CardBorderStyle}">
+                            <StackPanel
+                                MaxWidth="460"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="14">
+                                <Border Style="{StaticResource EmptyStateGlyphCircleStyle}">
+                                    <FontIcon
+                                        FontSize="40"
+                                        Foreground="{ThemeResource AccentFillColorDefaultBrush}"
+                                        Glyph="&#xE7FC;" />
+                                </Border>
+                                <TextBlock
+                                    Style="{StaticResource LargeEmptyTitleStyle}"
+                                    Text="No controllers connected" />
+                                <TextBlock
+                                    Style="{StaticResource LargeEmptyBodyStyle}"
+                                    Text="Plug one in, or pair it over Bluetooth. padmon will notice it without any setup." />
+                                <StackPanel
+                                    Margin="0,4,0,0"
+                                    HorizontalAlignment="Center"
+                                    Orientation="Horizontal"
+                                    Spacing="7">
+                                    <Ellipse
+                                        Width="7"
+                                        Height="7"
+                                        VerticalAlignment="Center"
+                                        Fill="{ThemeResource SystemFillColorSuccessBrush}" />
+                                    <TextBlock
+                                        Style="{StaticResource CaptionStyle}"
+                                        Text="Watching for controllers" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <StackPanel
+                        x:Name="ConnectedPanel"
+                        Spacing="12"
+                        Visibility="Collapsed">
+                        <ItemsRepeater ItemsSource="{x:Bind ViewModel.Controllers}">
+                            <ItemsRepeater.Layout>
+                                <UniformGridLayout
+                                    ItemsStretch="Fill"
+                                    MinColumnSpacing="12"
+                                    MinItemWidth="320"
+                                    MinRowSpacing="12" />
+                            </ItemsRepeater.Layout>
+                            <ItemsRepeater.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ControllerViewModel">
+                                    <Border Style="{StaticResource CardBorderStyle}">
+                                        <StackPanel Spacing="14">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <Border
+                                                    Width="52"
+                                                    Height="52"
+                                                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                                    CornerRadius="16">
+                                                    <TextBlock
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        FontFamily="Segoe UI Variable Display"
+                                                        FontSize="16"
+                                                        FontWeight="SemiBold"
+                                                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                                        Text="{x:Bind Initials}" />
+                                                </Border>
+
+                                                <StackPanel
+                                                    Grid.Column="1"
+                                                    Margin="12,0,12,0"
                                                     VerticalAlignment="Center"
-                                                    FontFamily="Segoe UI Variable Display"
-                                                    FontSize="16"
-                                                    FontWeight="SemiBold"
-                                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                                                    Text="{x:Bind Initials}" />
-                                            </Border>
-
-                                            <StackPanel
-                                                Grid.Column="1"
-                                                Margin="12,0,12,0"
-                                                VerticalAlignment="Center"
-                                                Spacing="3">
-                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    Spacing="3">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <TextBlock
+                                                            MaxLines="1"
+                                                            MaxWidth="210"
+                                                            VerticalAlignment="Center"
+                                                            Style="{StaticResource CardTitleStyle}"
+                                                            Text="{x:Bind DisplayName, Mode=OneWay}"
+                                                            TextTrimming="CharacterEllipsis" />
+                                                        <Border
+                                                            Padding="7,2"
+                                                            VerticalAlignment="Center"
+                                                            Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                            CornerRadius="8"
+                                                            Visibility="{x:Bind IsNew, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                            <TextBlock
+                                                                FontSize="9"
+                                                                FontWeight="SemiBold"
+                                                                Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                                                Text="NEW" />
+                                                        </Border>
+                                                    </StackPanel>
                                                     <TextBlock
                                                         MaxLines="1"
-                                                        MaxWidth="210"
-                                                        VerticalAlignment="Center"
-                                                        Style="{StaticResource CardTitleStyle}"
-                                                        Text="{x:Bind DisplayName, Mode=OneWay}"
+                                                        Style="{StaticResource CardSubtitleStyle}"
+                                                        Text="{x:Bind Subtitle, Mode=OneWay}"
                                                         TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+
+                                                <StackPanel
+                                                    Grid.Column="2"
+                                                    VerticalAlignment="Center"
+                                                    Orientation="Horizontal"
+                                                    Spacing="4">
+                                                    <Button
+                                                        AutomationProperties.Name="Rename controller"
+                                                        Click="Rename_Click"
+                                                        Style="{StaticResource IconButtonStyle}"
+                                                        Tag="{x:Bind StableKey}"
+                                                        ToolTipService.ToolTip="Rename controller">
+                                                        <FontIcon FontSize="13" Glyph="&#xE70F;" />
+                                                    </Button>
                                                     <Border
-                                                        Padding="7,2"
+                                                        Padding="9,4"
                                                         VerticalAlignment="Center"
-                                                        Background="{ThemeResource AccentFillColorDefaultBrush}"
-                                                        CornerRadius="8"
-                                                        Visibility="{x:Bind IsNew, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                                        CornerRadius="10"
+                                                        Visibility="{x:Bind HasBattery, Converter={StaticResource BooleanToVisibilityConverter}}">
                                                         <TextBlock
-                                                            FontSize="9"
-                                                            FontWeight="SemiBold"
-                                                            Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
-                                                            Text="NEW" />
+                                                            Style="{StaticResource PillTextStyle}"
+                                                            Text="{x:Bind BatteryLabel, Mode=OneWay}" />
                                                     </Border>
                                                 </StackPanel>
-                                                <TextBlock
-                                                    MaxLines="1"
-                                                    Style="{StaticResource CardSubtitleStyle}"
-                                                    Text="{x:Bind Subtitle, Mode=OneWay}"
-                                                    TextTrimming="CharacterEllipsis" />
-                                            </StackPanel>
+                                            </Grid>
 
-                                            <StackPanel
-                                                Grid.Column="2"
-                                                VerticalAlignment="Center"
-                                                Orientation="Horizontal"
-                                                Spacing="4">
+                                            <Border Style="{StaticResource DividerStyle}" />
+
+                                            <Grid ColumnSpacing="8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
                                                 <Button
-                                                    AutomationProperties.Name="Rename controller"
-                                                    Click="Rename_Click"
-                                                    Style="{StaticResource IconButtonStyle}"
-                                                    Tag="{x:Bind StableKey}"
-                                                    ToolTipService.ToolTip="Rename controller">
-                                                    <FontIcon FontSize="13" Glyph="&#xE70F;" />
-                                                </Button>
-                                                <Border
-                                                    Padding="9,4"
-                                                    VerticalAlignment="Center"
-                                                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                                    CornerRadius="10"
-                                                    Visibility="{x:Bind HasBattery, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                    <TextBlock
-                                                        Style="{StaticResource PillTextStyle}"
-                                                        Text="{x:Bind BatteryLabel, Mode=OneWay}" />
-                                                </Border>
-                                            </StackPanel>
-                                        </Grid>
+                                                    Click="MoreInfo_Click"
+                                                    Content="More information"
+                                                    Tag="{x:Bind StableKey}" />
+                                                <Button
+                                                    Grid.Column="2"
+                                                    Click="TestInputs_Click"
+                                                    Content="Test inputs"
+                                                    Tag="{x:Bind StableKey}" />
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsRepeater.ItemTemplate>
+                        </ItemsRepeater>
+                    </StackPanel>
+                </Grid>
 
-                                        <Border Style="{StaticResource DividerStyle}" />
-
-                                        <Grid ColumnSpacing="8">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <Button
-                                                Click="MoreInfo_Click"
-                                                Content="More information"
-                                                Tag="{x:Bind StableKey}" />
-                                            <Button
-                                                Grid.Column="2"
-                                                Click="TestInputs_Click"
-                                                Content="Test inputs"
-                                                Tag="{x:Bind StableKey}" />
-                                        </Grid>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsRepeater.ItemTemplate>
-                    </ItemsRepeater>
-                </StackPanel>
-
-                <StackPanel Spacing="10">
+                <StackPanel
+                    x:Name="SecondaryPanel"
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    Grid.ColumnSpan="2"
+                    VerticalAlignment="Top"
+                    Spacing="10"
+                    Visibility="Collapsed">
                     <Grid>
                         <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Previously connected" />
                         <HyperlinkButton
@@ -240,6 +284,7 @@
 
                     <Border
                         x:Name="HistoryEmptyCard"
+                        VerticalAlignment="Stretch"
                         Style="{StaticResource CardBorderStyle}">
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -296,7 +341,6 @@
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <Border
                                                 Width="38"
@@ -318,9 +362,11 @@
                                                 Spacing="1">
                                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                                     <TextBlock
+                                                        MaxLines="1"
                                                         VerticalAlignment="Center"
                                                         Style="{StaticResource CardTitleStyle}"
-                                                        Text="{x:Bind DisplayName}" />
+                                                        Text="{x:Bind DisplayName}"
+                                                        TextTrimming="CharacterEllipsis" />
                                                     <Border
                                                         Padding="8,2"
                                                         VerticalAlignment="Center"
@@ -335,26 +381,23 @@
                                                     </Border>
                                                 </StackPanel>
                                                 <TextBlock
+                                                    MaxLines="1"
                                                     Style="{StaticResource CardSubtitleStyle}"
-                                                    Text="{x:Bind HardwareName}" />
-                                            </StackPanel>
-                                            <StackPanel
-                                                Grid.Column="2"
-                                                HorizontalAlignment="Right"
-                                                VerticalAlignment="Center"
-                                                Spacing="1">
+                                                    Text="{x:Bind HardwareName}"
+                                                    TextTrimming="CharacterEllipsis" />
                                                 <TextBlock
-                                                    HorizontalAlignment="Right"
+                                                    Margin="0,2,0,0"
                                                     Style="{StaticResource CaptionStyle}"
-                                                    Text="{x:Bind LastSeenText}" />
+                                                    Text="{x:Bind LastSeenText}"
+                                                    TextWrapping="NoWrap" />
                                                 <TextBlock
-                                                    HorizontalAlignment="Right"
                                                     Style="{StaticResource CaptionStyle}"
-                                                    Text="{x:Bind SessionText}" />
+                                                    Text="{x:Bind SessionText}"
+                                                    TextWrapping="NoWrap" />
                                             </StackPanel>
                                             <Button
-                                                Grid.Column="3"
-                                                Margin="12,0,0,0"
+                                                Grid.Column="2"
+                                                Margin="8,0,0,0"
                                                 VerticalAlignment="Center"
                                                 AutomationProperties.Name="{x:Bind MergeActionText}"
                                                 Click="MergeHistory_Click"
@@ -366,13 +409,100 @@
                             </ItemsRepeater.ItemTemplate>
                         </ItemsRepeater>
                     </Border>
-                </StackPanel>
 
-                <TextBlock
-                    Margin="2,4,2,0"
-                    Style="{StaticResource CaptionStyle}"
-                    Text="padmon only reads controller state. It never remaps buttons or changes your devices." />
-            </StackPanel>
+                    <Border
+                        Margin="0,4,0,0"
+                        Style="{StaticResource CardBorderStyle}">
+                        <StackPanel Spacing="12">
+                            <TextBlock Style="{StaticResource CardTitleStyle}" Text="Quick start" />
+
+                            <Grid ColumnSpacing="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border
+                                    Width="26"
+                                    Height="26"
+                                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                    CornerRadius="13">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="11"
+                                        FontWeight="SemiBold"
+                                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                        Text="1" />
+                                </Border>
+                                <StackPanel Grid.Column="1" Spacing="1">
+                                    <TextBlock Style="{StaticResource BodyStyle}" Text="Connect a controller" />
+                                    <TextBlock
+                                        Style="{StaticResource CaptionStyle}"
+                                        Text="padmon notices it automatically." />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid ColumnSpacing="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border
+                                    Width="26"
+                                    Height="26"
+                                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                    CornerRadius="13">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="11"
+                                        FontWeight="SemiBold"
+                                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                        Text="2" />
+                                </Border>
+                                <StackPanel Grid.Column="1" Spacing="1">
+                                    <TextBlock Style="{StaticResource BodyStyle}" Text="Open Test inputs" />
+                                    <TextBlock
+                                        Style="{StaticResource CaptionStyle}"
+                                        Text="See every button and axis live." />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid ColumnSpacing="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border
+                                    Width="26"
+                                    Height="26"
+                                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                    CornerRadius="13">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="11"
+                                        FontWeight="SemiBold"
+                                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                        Text="3" />
+                                </Border>
+                                <StackPanel Grid.Column="1" Spacing="1">
+                                    <TextBlock Style="{StaticResource BodyStyle}" Text="Rename it" />
+                                    <TextBlock
+                                        Style="{StaticResource CaptionStyle}"
+                                        Text="Keep the name in history and notifications." />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+
+            <TextBlock
+                Grid.Row="3"
+                Margin="2,20,2,0"
+                Style="{StaticResource CaptionStyle}"
+                Text="padmon only reads controller state. It never remaps buttons or changes your devices." />
         </Grid>
     </ScrollViewer>
 </Page>

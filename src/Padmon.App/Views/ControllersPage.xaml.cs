@@ -16,6 +16,7 @@ public sealed partial class ControllersPage : Page
 {
     private int _historyLoadVersion;
     private IReadOnlyList<KnownControllerViewModel> _allKnownControllers = [];
+    private bool _hasHistory;
 
     public ControllersPage()
     {
@@ -34,6 +35,22 @@ public sealed partial class ControllersPage : Page
     public ControllerMonitor ViewModel { get; }
 
     public ObservableCollection<KnownControllerViewModel> PreviousControllers { get; } = [];
+
+    private void PageRoot_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        UpdateResponsiveLayout(e.NewSize.Width);
+    }
+
+    private void UpdateResponsiveLayout(double width)
+    {
+        var wide = width >= 1180 && _hasHistory;
+
+        Grid.SetColumnSpan(PrimaryPanel, wide ? 1 : 2);
+        Grid.SetRow(SecondaryPanel, wide ? 0 : 1);
+        Grid.SetColumn(SecondaryPanel, wide ? 1 : 0);
+        Grid.SetColumnSpan(SecondaryPanel, wide ? 1 : 2);
+        BodyGrid.ColumnSpacing = wide ? 20 : 0;
+    }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
@@ -132,8 +149,12 @@ public sealed partial class ControllersPage : Page
         }
 
         var hasHistory = PreviousControllers.Count > 0;
+        _hasHistory = hasHistory;
+        SecondaryPanel.Visibility = hasHistory ? Visibility.Visible : Visibility.Collapsed;
         HistoryEmptyCard.Visibility = hasHistory ? Visibility.Collapsed : Visibility.Visible;
         HistoryListCard.Visibility = hasHistory ? Visibility.Visible : Visibility.Collapsed;
+
+        UpdateResponsiveLayout(PageRoot.ActualWidth);
     }
 
     private void ViewHistory_Click(object sender, RoutedEventArgs e)

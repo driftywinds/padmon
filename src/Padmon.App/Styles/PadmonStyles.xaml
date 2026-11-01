@@ -5,6 +5,12 @@
 
     <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
 
+    <Style x:Key="PageRootStyle" TargetType="Grid">
+        <Setter Property="MaxWidth" Value="1480" />
+        <Setter Property="Padding" Value="36,28,36,40" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+
     <Style x:Key="PageTitleStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="Segoe UI Variable Display" />
         <Setter Property="FontSize" Value="32" />

@@ -29,6 +29,17 @@ public sealed partial class SettingsPage : Page
 
     public SettingsViewModel ViewModel { get; private set; }
 
+    private void PageRoot_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        var wide = e.NewSize.Width >= 1180;
+
+        Grid.SetColumnSpan(LeftSettings, wide ? 1 : 2);
+        Grid.SetRow(RightSettings, wide ? 0 : 1);
+        Grid.SetColumn(RightSettings, wide ? 1 : 0);
+        Grid.SetColumnSpan(RightSettings, wide ? 1 : 2);
+        SettingsBody.ColumnSpacing = wide ? 20 : 0;
+    }
+
     private void TestNotification_Click(object sender, RoutedEventArgs e)
     {
         var nativeRequested = App.Services.Notifications.PreferNative;

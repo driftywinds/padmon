@@ -9,11 +9,16 @@
     NavigationCacheMode="Disabled"
     mc:Ignorable="d">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <ScrollViewer
+        x:Name="PageScroll"
+        HorizontalContentAlignment="Stretch"
+        HorizontalScrollBarVisibility="Disabled"
+        VerticalScrollBarVisibility="Auto">
         <Grid
-            MaxWidth="1080"
-            Padding="32,24,32,40"
-            HorizontalAlignment="Stretch">
+            x:Name="PageRoot"
+            Width="{Binding ViewportWidth, ElementName=PageScroll}"
+            MinHeight="{Binding ViewportHeight, ElementName=PageScroll}"
+            Style="{StaticResource PageRootStyle}">
             <StackPanel Spacing="22">
 
                 <Button

@@ -26,6 +26,17 @@ public sealed partial class UpdatePage : Page
         }
     }
 
+    private void PageRoot_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        var wide = e.NewSize.Width >= 1180;
+
+        Grid.SetColumnSpan(UpdateMain, wide ? 1 : 2);
+        Grid.SetRow(UpdateInfo, wide ? 0 : 1);
+        Grid.SetColumn(UpdateInfo, wide ? 1 : 0);
+        Grid.SetColumnSpan(UpdateInfo, wide ? 1 : 2);
+        UpdateBody.ColumnSpacing = wide ? 20 : 0;
+    }
+
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);

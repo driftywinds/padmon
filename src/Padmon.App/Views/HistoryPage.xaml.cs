@@ -17,6 +17,23 @@ public sealed partial class HistoryPage : Page
 
     public ObservableCollection<ConnectionSessionViewModel> Sessions { get; } = [];
 
+    private void PageRoot_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        var wide = e.NewSize.Width >= 1180;
+
+        Grid.SetColumnSpan(KnownPanel, wide ? 1 : 2);
+        Grid.SetRow(SessionsPanel, wide ? 0 : 1);
+        Grid.SetColumn(SessionsPanel, wide ? 1 : 0);
+        Grid.SetColumnSpan(SessionsPanel, wide ? 1 : 2);
+        Grid.SetRow(RetentionCard, wide ? 1 : 2);
+        Grid.SetColumn(RetentionCard, 0);
+        Grid.SetColumnSpan(RetentionCard, wide ? 1 : 2);
+
+        BodyGrid.ColumnSpacing = wide ? 20 : 0;
+        KnownEmptyCard.MinHeight = wide ? 480 : 0;
+        SessionsEmptyCard.MinHeight = wide ? 480 : 0;
+    }
+
     protected override async void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);

@@ -5,143 +5,272 @@
     Background="Transparent"
     NavigationCacheMode="Disabled">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <ScrollViewer
+        x:Name="PageScroll"
+        HorizontalContentAlignment="Stretch"
+        HorizontalScrollBarVisibility="Disabled"
+        VerticalScrollBarVisibility="Auto">
         <Grid
-            MaxWidth="880"
-            Padding="32,24,32,40"
-            HorizontalAlignment="Left">
-            <StackPanel Spacing="24">
+            x:Name="PageRoot"
+            Width="{Binding ViewportWidth, ElementName=PageScroll}"
+            MinHeight="{Binding ViewportHeight, ElementName=PageScroll}"
+            SizeChanged="PageRoot_SizeChanged"
+            Style="{StaticResource PageRootStyle}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-                <StackPanel Spacing="6">
-                    <TextBlock Style="{StaticResource PageTitleStyle}" Text="Update" />
-                    <TextBlock
-                        x:Name="PageSubtitle"
-                        Style="{StaticResource PageSubtitleStyle}"
-                        Text="Check for a newer padmon release. Nothing is downloaded or installed automatically." />
+            <StackPanel Grid.Row="0" Spacing="6">
+                <TextBlock Style="{StaticResource PageTitleStyle}" Text="Update" />
+                <TextBlock
+                    x:Name="PageSubtitle"
+                    Style="{StaticResource PageSubtitleStyle}"
+                    Text="Check for a newer padmon release. Nothing is downloaded or installed automatically." />
+            </StackPanel>
+
+            <Grid
+                x:Name="UpdateBody"
+                Grid.Row="1"
+                Margin="0,24,0,0"
+                ColumnSpacing="0"
+                RowSpacing="24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel
+                    x:Name="UpdateMain"
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Grid.ColumnSpan="2"
+                    Spacing="24">
+
+                    <Border Style="{StaticResource SettingsCardStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="4">
+                                <TextBlock Style="{StaticResource CardTitleStyle}" Text="Installed version" />
+                                <TextBlock
+                                    x:Name="CurrentVersionText"
+                                    Style="{StaticResource CardSubtitleStyle}"
+                                    Text="Version 0.0.0" />
+                                <TextBlock
+                                    x:Name="BuildKindText"
+                                    Style="{StaticResource CaptionStyle}"
+                                    Text="Portable build" />
+                            </StackPanel>
+                            <Button
+                                x:Name="CheckButton"
+                                Grid.Column="1"
+                                Margin="20,0,0,0"
+                                VerticalAlignment="Center"
+                                AutomationProperties.Name="Check for updates"
+                                Click="Check_Click"
+                                Content="Check for updates" />
+                        </Grid>
+                    </Border>
+
+                    <InfoBar
+                        x:Name="StatusBar"
+                        IsClosable="False"
+                        IsOpen="False" />
+
+                    <Border
+                        x:Name="StoreCard"
+                        Padding="24"
+                        Style="{StaticResource CardBorderStyle}"
+                        Visibility="Collapsed">
+                        <StackPanel Spacing="12">
+                            <StackPanel Spacing="4">
+                                <TextBlock Style="{StaticResource CardTitleStyle}" Text="Updates come from Microsoft Store" />
+                                <TextBlock
+                                    Style="{StaticResource CardSubtitleStyle}"
+                                    Text="This copy of padmon was installed as an MSIX package. The Store handles updates automatically, so padmon does not download or replace its own files."
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                            <Button
+                                AutomationProperties.Name="Open Microsoft Store updates"
+                                Click="OpenStoreUpdates_Click"
+                                Content="Open Store updates" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border
+                        x:Name="AvailableCard"
+                        Padding="24"
+                        Style="{StaticResource CardBorderStyle}"
+                        Visibility="Collapsed">
+                        <StackPanel Spacing="14">
+                            <StackPanel Spacing="3">
+                                <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Update available" />
+                                <TextBlock
+                                    x:Name="LatestVersionText"
+                                    Style="{StaticResource CardTitleStyle}"
+                                    Text="Version 0.0.0" />
+                                <TextBlock
+                                    x:Name="PublishedText"
+                                    Style="{StaticResource CaptionStyle}"
+                                    Text="Latest GitHub release" />
+                            </StackPanel>
+
+                            <ScrollViewer
+                                MaxHeight="220"
+                                VerticalScrollBarVisibility="Auto">
+                                <TextBlock
+                                    x:Name="ReleaseNotesText"
+                                    FontSize="13"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    TextWrapping="Wrap" />
+                            </ScrollViewer>
+
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <Button
+                                    x:Name="InstallButton"
+                                    AutomationProperties.Name="Download and install update"
+                                    Click="Install_Click"
+                                    Content="Download and install" />
+                                <HyperlinkButton
+                                    x:Name="ReleaseLinkButton"
+                                    Click="ReleaseLink_Click"
+                                    Content="View on GitHub" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border
+                        x:Name="UpToDateCard"
+                        Padding="24"
+                        Style="{StaticResource CardBorderStyle}"
+                        Visibility="Collapsed">
+                        <StackPanel Spacing="4">
+                            <TextBlock Style="{StaticResource CardTitleStyle}" Text="You're up to date" />
+                            <TextBlock
+                                Style="{StaticResource CardSubtitleStyle}"
+                                Text="You are running the latest published padmon release." />
+                        </StackPanel>
+                    </Border>
+
+                    <Border
+                        x:Name="NoReleaseCard"
+                        Padding="24"
+                        Style="{StaticResource CardBorderStyle}"
+                        Visibility="Collapsed">
+                        <StackPanel Spacing="4">
+                            <TextBlock Style="{StaticResource CardTitleStyle}" Text="No published release yet" />
+                            <TextBlock
+                                Style="{StaticResource CardSubtitleStyle}"
+                                Text="There is no GitHub release to compare against. Check again after the first release is published." />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
 
-                <Border Style="{StaticResource SettingsCardStyle}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                <StackPanel
+                    x:Name="UpdateInfo"
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    Grid.ColumnSpan="2"
+                    Spacing="16">
+                    <Border Style="{StaticResource CardBorderStyle}">
+                        <StackPanel Spacing="14">
+                            <StackPanel Spacing="3">
+                                <TextBlock Style="{StaticResource CardTitleStyle}" Text="How updates work" />
+                                <TextBlock
+                                    Style="{StaticResource CardSubtitleStyle}"
+                                    Text="Explicit, local, and never silent." />
+                            </StackPanel>
+
+                            <Border Style="{StaticResource DividerStyle}" />
+
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border
+                                    Width="36"
+                                    Height="36"
+                                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                    CornerRadius="12">
+                                    <FontIcon
+                                        FontSize="16"
+                                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                        Glyph="&#xE72C;" />
+                                </Border>
+                                <StackPanel Grid.Column="1" Spacing="2">
+                                    <TextBlock Style="{StaticResource BodyStyle}" Text="You start the check" />
+                                    <TextBlock
+                                        Style="{StaticResource CaptionStyle}"
+                                        Text="padmon contacts GitHub only when you press Check for updates." />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border
+                                    Width="36"
+                                    Height="36"
+                                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                    CornerRadius="12">
+                                    <FontIcon
+                                        FontSize="16"
+                                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                        Glyph="&#xE896;" />
+                                </Border>
+                                <StackPanel Grid.Column="1" Spacing="2">
+                                    <TextBlock Style="{StaticResource BodyStyle}" Text="You approve the install" />
+                                    <TextBlock
+                                        Style="{StaticResource CaptionStyle}"
+                                        Text="Nothing downloads until you confirm the update dialog." />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Border
+                                    Width="36"
+                                    Height="36"
+                                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                    CornerRadius="12">
+                                    <FontIcon
+                                        FontSize="16"
+                                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                        Glyph="&#xE719;" />
+                                </Border>
+                                <StackPanel Grid.Column="1" Spacing="2">
+                                    <TextBlock Style="{StaticResource BodyStyle}" Text="Store builds stay with the Store" />
+                                    <TextBlock
+                                        Style="{StaticResource CaptionStyle}"
+                                        Text="MSIX builds never replace their own files; Microsoft Store delivers updates." />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource SettingsCardStyle}">
                         <StackPanel Spacing="4">
-                            <TextBlock Style="{StaticResource CardTitleStyle}" Text="Installed version" />
-                            <TextBlock
-                                x:Name="CurrentVersionText"
-                                Style="{StaticResource CardSubtitleStyle}"
-                                Text="Version 0.0.0" />
-                            <TextBlock
-                                x:Name="BuildKindText"
-                                Style="{StaticResource CaptionStyle}"
-                                Text="Portable build" />
-                        </StackPanel>
-                        <Button
-                            x:Name="CheckButton"
-                            Grid.Column="1"
-                            Margin="20,0,0,0"
-                            VerticalAlignment="Center"
-                            AutomationProperties.Name="Check for updates"
-                            Click="Check_Click"
-                            Content="Check for updates" />
-                    </Grid>
-                </Border>
-
-                <InfoBar
-                    x:Name="StatusBar"
-                    IsClosable="False"
-                    IsOpen="False" />
-
-                <Border
-                    x:Name="StoreCard"
-                    Padding="24"
-                    Style="{StaticResource CardBorderStyle}"
-                    Visibility="Collapsed">
-                    <StackPanel Spacing="12">
-                        <StackPanel Spacing="4">
-                            <TextBlock Style="{StaticResource CardTitleStyle}" Text="Updates come from Microsoft Store" />
+                            <TextBlock Style="{StaticResource CardTitleStyle}" Text="Your data stays local" />
                             <TextBlock
                                 Style="{StaticResource CardSubtitleStyle}"
-                                Text="This copy of padmon was installed as an MSIX package. The Store handles updates automatically, so padmon does not download or replace its own files."
-                                TextWrapping="Wrap" />
+                                Text="Updating keeps controller names, history, and preferences. No account or cloud sync is involved." />
                         </StackPanel>
-                        <Button
-                            AutomationProperties.Name="Open Microsoft Store updates"
-                            Click="OpenStoreUpdates_Click"
-                            Content="Open Store updates" />
-                    </StackPanel>
-                </Border>
-
-                <Border
-                    x:Name="AvailableCard"
-                    Padding="24"
-                    Style="{StaticResource CardBorderStyle}"
-                    Visibility="Collapsed">
-                    <StackPanel Spacing="14">
-                        <StackPanel Spacing="3">
-                            <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Update available" />
-                            <TextBlock
-                                x:Name="LatestVersionText"
-                                Style="{StaticResource CardTitleStyle}"
-                                Text="Version 0.0.0" />
-                            <TextBlock
-                                x:Name="PublishedText"
-                                Style="{StaticResource CaptionStyle}"
-                                Text="Latest GitHub release" />
-                        </StackPanel>
-
-                        <ScrollViewer
-                            MaxHeight="220"
-                            VerticalScrollBarVisibility="Auto">
-                            <TextBlock
-                                x:Name="ReleaseNotesText"
-                                FontSize="13"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                TextWrapping="Wrap" />
-                        </ScrollViewer>
-
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <Button
-                                x:Name="InstallButton"
-                                AutomationProperties.Name="Download and install update"
-                                Click="Install_Click"
-                                Content="Download and install" />
-                            <HyperlinkButton
-                                x:Name="ReleaseLinkButton"
-                                Click="ReleaseLink_Click"
-                                Content="View on GitHub" />
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-
-                <Border
-                    x:Name="UpToDateCard"
-                    Padding="24"
-                    Style="{StaticResource CardBorderStyle}"
-                    Visibility="Collapsed">
-                    <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource CardTitleStyle}" Text="You're up to date" />
-                        <TextBlock
-                            Style="{StaticResource CardSubtitleStyle}"
-                            Text="You are running the latest published padmon release." />
-                    </StackPanel>
-                </Border>
-
-                <Border
-                    x:Name="NoReleaseCard"
-                    Padding="24"
-                    Style="{StaticResource CardBorderStyle}"
-                    Visibility="Collapsed">
-                    <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource CardTitleStyle}" Text="No published release yet" />
-                        <TextBlock
-                            Style="{StaticResource CardSubtitleStyle}"
-                            Text="There is no GitHub release to compare against. Check again after the first release is published." />
-                    </StackPanel>
-                </Border>
-
-            </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
         </Grid>
     </ScrollViewer>
 </Page>

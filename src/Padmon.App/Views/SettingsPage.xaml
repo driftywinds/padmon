@@ -5,18 +5,50 @@
     Background="Transparent"
     NavigationCacheMode="Required">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <ScrollViewer
+        x:Name="PageScroll"
+        HorizontalContentAlignment="Stretch"
+        HorizontalScrollBarVisibility="Disabled"
+        VerticalScrollBarVisibility="Auto">
         <Grid
-            MaxWidth="1080"
-            Padding="32,24,32,40"
-            HorizontalAlignment="Stretch">
-            <StackPanel Spacing="26">
-                <StackPanel Spacing="6">
-                    <TextBlock Style="{StaticResource PageTitleStyle}" Text="Settings" />
-                    <TextBlock
-                        Style="{StaticResource PageSubtitleStyle}"
-                        Text="How padmon watches, remembers, and lets you know." />
-                </StackPanel>
+            x:Name="PageRoot"
+            Width="{Binding ViewportWidth, ElementName=PageScroll}"
+            MinHeight="{Binding ViewportHeight, ElementName=PageScroll}"
+            SizeChanged="PageRoot_SizeChanged"
+            Style="{StaticResource PageRootStyle}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Spacing="6">
+                <TextBlock Style="{StaticResource PageTitleStyle}" Text="Settings" />
+                <TextBlock
+                    Style="{StaticResource PageSubtitleStyle}"
+                    Text="How padmon watches, remembers, and lets you know." />
+            </StackPanel>
+
+            <Grid
+                x:Name="SettingsBody"
+                Grid.Row="1"
+                Margin="0,26,0,0"
+                ColumnSpacing="0"
+                RowSpacing="26">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel
+                    x:Name="LeftSettings"
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Grid.ColumnSpan="2"
+                    Spacing="26">
 
                 <StackPanel Spacing="10">
                     <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Monitoring" />
@@ -243,6 +275,14 @@
                         </StackPanel>
                     </Border>
                 </StackPanel>
+                </StackPanel>
+
+                <StackPanel
+                    x:Name="RightSettings"
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    Grid.ColumnSpan="2"
+                    Spacing="26">
 
                 <StackPanel Spacing="10">
                     <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Appearance" />
@@ -590,7 +630,8 @@
                         </StackPanel>
                     </Border>
                 </StackPanel>
-            </StackPanel>
+                </StackPanel>
+            </Grid>
         </Grid>
     </ScrollViewer>
 </Page>
