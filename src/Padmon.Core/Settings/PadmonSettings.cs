@@ -2,6 +2,11 @@ namespace Padmon.Core.Settings;
 
 public sealed class PadmonSettings
 {
+    public const string DefaultCustomThemeBackground = "#111214";
+    public const string DefaultCustomThemeForeground = "#1A1B1F";
+    public const string DefaultCustomThemeText = "#ECEDEF";
+    public const string DefaultCustomThemeHighlight = "#7AA2F7";
+
     public bool BackgroundMonitoring { get; set; } = true;
 
     public bool StartWithWindows { get; set; }
@@ -33,11 +38,11 @@ public sealed class PadmonSettings
 
     public bool UseSystemAccent { get; set; }
 
-    public string CustomThemeBackground { get; set; } = "#111214";
+    public string CustomThemeBackground { get; set; } = DefaultCustomThemeBackground;
 
-    public string CustomThemeForeground { get; set; } = "#1A1B1F";
+    public string CustomThemeForeground { get; set; } = DefaultCustomThemeForeground;
 
-    public string CustomThemeText { get; set; } = "#ECEDEF";
+    public string CustomThemeText { get; set; } = DefaultCustomThemeText;
 
-    public string CustomThemeHighlight { get; set; } = "#7AA2F7";
+    public string CustomThemeHighlight { get; set; } = DefaultCustomThemeHighlight;
 }

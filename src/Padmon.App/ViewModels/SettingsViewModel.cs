@@ -268,6 +268,21 @@ public sealed class SettingsViewModel : ObservableObject
             () => _settings.CustomThemeHighlight);
     }
 
+    public void ResetCustomTheme()
+    {
+        _settings.CustomThemeBackground = PadmonSettings.DefaultCustomThemeBackground;
+        _settings.CustomThemeForeground = PadmonSettings.DefaultCustomThemeForeground;
+        _settings.CustomThemeText = PadmonSettings.DefaultCustomThemeText;
+        _settings.CustomThemeHighlight = PadmonSettings.DefaultCustomThemeHighlight;
+
+        OnPropertyChanged(nameof(CustomBackground));
+        OnPropertyChanged(nameof(CustomForeground));
+        OnPropertyChanged(nameof(CustomText));
+        OnPropertyChanged(nameof(CustomHighlight));
+        ApplyTheme("Custom");
+        _ = SaveAsync();
+    }
+
     private async Task SetStartWithWindowsAsync(bool value)
     {
         if (!await StartupService.TrySetEnabledAsync(value))

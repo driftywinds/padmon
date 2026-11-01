@@ -209,6 +209,12 @@ public sealed partial class SettingsPage : Page
         }
     }
 
+    private void ResetCustomTheme_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ResetCustomTheme();
+        SyncCustomColorInputs();
+    }
+
     private static void SetPreview(Border preview, string hex)
     {
         if (TryParseColor(hex, out var color))

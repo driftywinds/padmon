@@ -456,12 +456,26 @@
                             Spacing="12"
                             Visibility="{x:Bind ViewModel.IsCustomTheme, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <Border Style="{StaticResource DividerStyle}" />
-                            <StackPanel Spacing="2">
-                                <TextBlock Style="{StaticResource CardTitleStyle}" Text="Custom colours" />
-                                <TextBlock
-                                    Style="{StaticResource CardSubtitleStyle}"
-                                    Text="Use six-digit hex values. Changes apply immediately." />
-                            </StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Style="{StaticResource CardTitleStyle}" Text="Custom colours" />
+                                    <TextBlock
+                                        Style="{StaticResource CardSubtitleStyle}"
+                                        Text="Use six-digit hex values. Changes apply immediately." />
+                                </StackPanel>
+                                <HyperlinkButton
+                                    Grid.Column="1"
+                                    AutomationProperties.Name="Reset custom colours to default"
+                                    Click="ResetCustomTheme_Click"
+                                    Content="Set to default"
+                                    FontSize="12"
+                                    Padding="0"
+                                    ToolTipService.ToolTip="Restore the four built-in custom colours" />
+                            </Grid>
 
                             <Grid ColumnSpacing="12">
                                 <Grid.ColumnDefinitions>
