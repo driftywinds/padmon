@@ -40,6 +40,13 @@ public sealed partial class SettingsPage : Page
         SettingsBody.ColumnSpacing = wide ? 20 : 0;
     }
 
+    private void GoToTester_Click(object sender, RoutedEventArgs e)
+    {
+        // Opens the tester for the first connected controller, or a simulated preview when
+        // none is connected, so the tester UI can always be reached from here.
+        Frame.Navigate(typeof(ControllerDetailPage), ControllerDetailPage.PreviewKey);
+    }
+
     private void TestNotification_Click(object sender, RoutedEventArgs e)
     {
         var nativeRequested = App.Services.Notifications.PreferNative;

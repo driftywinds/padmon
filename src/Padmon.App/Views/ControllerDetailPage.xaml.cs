@@ -1,8 +1,10 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using Padmon.Core.Devices;
+using Padmon.Services;
 using Padmon.ViewModels;
 
 namespace Padmon.Views;
@@ -24,8 +26,17 @@ public sealed partial class ControllerDetailPage : Page
         false,
         null);
 
+    /// <summary>
+    /// Navigation parameter that opens the tester without a specific controller: the first
+    /// connected controller if there is one, otherwise a simulated preview.
+    /// </summary>
+    public const string PreviewKey = "padmon:preview";
+
     private ControllerViewModel? _controller;
     private bool _useDiagram;
+    private bool _isPreview;
+    private DispatcherTimer? _previewTimer;
+    private Stopwatch? _previewClock;
 
     public ControllerDetailPage()
     {
@@ -46,6 +57,20 @@ public sealed partial class ControllerDetailPage : Page
         if (e.Parameter is not string stableKey)
         {
             return;
+        }
+
+        if (string.Equals(stableKey, PreviewKey, StringComparison.Ordinal))
+        {
+            BackButton.Content = "Back to settings";
+
+            var connected = App.Services.Monitor.Controllers.FirstOrDefault();
+            if (connected is null)
+            {
+                StartPreview();
+                return;
+            }
+
+            stableKey = connected.StableKey;
         }
 
         _controller = App.Services.Monitor.Controllers.FirstOrDefault(
@@ -77,9 +102,50 @@ public sealed partial class ControllerDetailPage : Page
         App.Services.Monitor.SetLivePreview(true);
     }
 
+    private void StartPreview()
+    {
+        _isPreview = true;
+        _controller = new ControllerViewModel(PreviewSnapshotFactory.Device);
+        Tester = new ControllerTesterViewModel(_controller);
+        _controller.PropertyChanged += OnControllerPropertyChanged;
+
+        ControllerName.Text = "Preview controller";
+        ControllerSubtitle.Text = "Simulated input · no controller connected";
+        BatteryText.Text = "Preview";
+        MappingBadge.Text = "PREVIEW";
+        IndexText.Text = "0";
+        PreviewBar.IsOpen = true;
+
+        Bindings.Update();
+
+        _previewClock = Stopwatch.StartNew();
+        _previewTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) };
+        _previewTimer.Tick += OnPreviewTick;
+        _previewTimer.Start();
+        OnPreviewTick(null, null);
+    }
+
+    private void OnPreviewTick(object? sender, object? e)
+    {
+        if (_controller is null || _previewClock is null)
+        {
+            return;
+        }
+
+        // Goes through the same path as live input: Snapshot changes -> OnControllerPropertyChanged.
+        _controller.ApplySnapshot(PreviewSnapshotFactory.Create(_previewClock.Elapsed.TotalSeconds));
+    }
+
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
         base.OnNavigatedFrom(e);
+
+        if (_previewTimer is not null)
+        {
+            _previewTimer.Stop();
+            _previewTimer.Tick -= OnPreviewTick;
+            _previewTimer = null;
+        }
 
         App.Services.Monitor.SetLivePreview(false);
 
@@ -154,6 +220,12 @@ public sealed partial class ControllerDetailPage : Page
     {
         if (_controller is null)
         {
+            return;
+        }
+
+        if (_isPreview)
+        {
+            Tester.VibrationText = "n/a (preview)";
             return;
         }
 

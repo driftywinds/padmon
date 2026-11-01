@@ -105,7 +105,21 @@
                 </StackPanel>
 
                 <StackPanel Spacing="10">
-                    <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Controller tester" />
+                    <Grid Margin="0,0,20,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Style="{StaticResource SectionHeaderStyle}"
+                            Text="Controller tester" />
+                        <Button
+                            Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            Click="GoToTester_Click"
+                            Content="Go to tester" />
+                    </Grid>
                     <Border Style="{StaticResource SettingsCardStyle}">
                         <Grid>
                             <Grid.ColumnDefinitions>

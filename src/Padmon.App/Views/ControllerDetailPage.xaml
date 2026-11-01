@@ -76,6 +76,7 @@
             <StackPanel Spacing="22">
 
                 <Button
+                    x:Name="BackButton"
                     Click="Back_Click"
                     Content="Back to controllers"
                     HorizontalAlignment="Left" />
@@ -125,6 +126,14 @@
                     Message="The last input state is still shown below." />
 
                 <InfoBar
+                    x:Name="PreviewBar"
+                    IsClosable="False"
+                    IsOpen="False"
+                    Severity="Informational"
+                    Title="Preview mode"
+                    Message="No controller is connected, so this shows simulated input to let you check the tester layout. Connect a controller to test it for real." />
+
+                <InfoBar
                     x:Name="RumbleBar"
                     IsClosable="True"
                     IsOpen="False"
@@ -172,7 +181,7 @@
                                 <TextBlock Style="{StaticResource StatLabelStyle}" Text="MAPPING" />
                                 <TextBlock Style="{StaticResource StatValueStyle}" Text="{x:Bind Tester.MappingText, Mode=OneWay}" />
                             </StackPanel>
-                            <StackPanel Grid.Column="3" MinWidth="120">
+                            <StackPanel Grid.Column="3" Width="150">
                                 <TextBlock Style="{StaticResource StatLabelStyle}" Text="TIMESTAMP" />
                                 <TextBlock Style="{StaticResource StatValueStyle}" Text="{x:Bind Tester.TimestampText, Mode=OneWay}" />
                             </StackPanel>
@@ -200,7 +209,7 @@
                             <StackPanel Spacing="10">
                                 <TextBlock Style="{StaticResource StatLabelStyle}" Text="L STICK" />
                                 <StackPanel Orientation="Horizontal" Spacing="22">
-                                    <ItemsRepeater ItemsSource="{x:Bind Tester.LeftAxisCells}" ItemTemplate="{StaticResource PadCellTemplate}" VerticalAlignment="Center">
+                                    <ItemsRepeater ItemsSource="{x:Bind Tester.LeftAxisCells}" ItemTemplate="{StaticResource PadCellTemplate}" VerticalAlignment="Center" Width="104">
                                         <ItemsRepeater.Layout>
                                             <StackLayout Spacing="14" />
                                         </ItemsRepeater.Layout>
@@ -211,7 +220,7 @@
                             <StackPanel Grid.Column="1" Spacing="10">
                                 <TextBlock Style="{StaticResource StatLabelStyle}" Text="R STICK" />
                                 <StackPanel Orientation="Horizontal" Spacing="22">
-                                    <ItemsRepeater ItemsSource="{x:Bind Tester.RightAxisCells}" ItemTemplate="{StaticResource PadCellTemplate}" VerticalAlignment="Center">
+                                    <ItemsRepeater ItemsSource="{x:Bind Tester.RightAxisCells}" ItemTemplate="{StaticResource PadCellTemplate}" VerticalAlignment="Center" Width="104">
                                         <ItemsRepeater.Layout>
                                             <StackLayout Spacing="14" />
                                         </ItemsRepeater.Layout>
