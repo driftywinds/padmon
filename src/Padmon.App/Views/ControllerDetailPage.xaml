@@ -131,7 +131,19 @@
                     IsOpen="False"
                     Severity="Informational"
                     Title="Preview mode"
-                    Message="No controller is connected, so this shows simulated input to let you check the tester layout. Connect a controller to test it for real." />
+                    Message="No controller is connected, so this shows simulated input to let you check the tester layout. Connect a controller to test it for real.">
+                    <InfoBar.ActionButton>
+                        <HyperlinkButton
+                            AutomationProperties.Name="Try the web tester"
+                            Content="Try it on web"
+                            FontSize="12"
+                            Margin="0,6,0,0"
+							VerticalAlignment="Center"
+                            NavigateUri="https://padtester.pages.dev"
+                            Padding="0"
+                            ToolTipService.ToolTip="Open the browser tester" />
+                    </InfoBar.ActionButton>
+                </InfoBar>
 
                 <InfoBar
                     x:Name="RumbleBar"
@@ -606,6 +618,15 @@
                         </Border>
                     </Grid>
                 </StackPanel>
+
+                <HyperlinkButton
+                    HorizontalAlignment="Left"
+                    AutomationProperties.Name="Open the browser tester"
+                    Content="Open the browser tester"
+                    FontSize="12"
+                    NavigateUri="https://padtester.pages.dev"
+                    Padding="0"
+                    ToolTipService.ToolTip="Open the browser tester" />
             </StackPanel>
         </Grid>
     </ScrollViewer>
