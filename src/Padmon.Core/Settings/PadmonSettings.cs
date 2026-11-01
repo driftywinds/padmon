@@ -15,6 +15,14 @@ public sealed class PadmonSettings
     public bool UseNativeNotifications { get; set; }
 
     /// <summary>
+    /// Absolute desktop coordinates of the in-app notification card's top-left
+    /// corner. Null means use the default bottom-right position.
+    /// </summary>
+    public int? NotificationPositionX { get; set; }
+
+    public int? NotificationPositionY { get; set; }
+
+    /// <summary>
     /// Show the controller diagram tester (hardwaretester-style) instead of the classic tester cards.
     /// </summary>
     public bool ShowControllerDiagram { get; set; } = true;

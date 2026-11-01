@@ -138,6 +138,18 @@ public sealed partial class MainWindow : Window, IDisposable
         _notificationWindow.ShowMessage(title, body);
     }
 
+    public NotificationWindow ShowNotificationPlacement()
+    {
+        _notificationWindow ??= new NotificationWindow();
+        _notificationWindow.ShowForPlacement();
+        return _notificationWindow;
+    }
+
+    public void HideNotificationPlacement()
+    {
+        _notificationWindow?.HideForPlacement();
+    }
+
     private void OnAppWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
     {
         if (_isExiting || !App.Services.Settings.BackgroundMonitoring)

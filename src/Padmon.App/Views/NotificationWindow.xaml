@@ -11,6 +11,10 @@
         Background="#FF202020"
         BorderThickness="0"
         CornerRadius="0"
+        PointerCaptureLost="Root_PointerCaptureLost"
+        PointerMoved="Root_PointerMoved"
+        PointerPressed="Root_PointerPressed"
+        PointerReleased="Root_PointerReleased"
         Tapped="Root_Tapped">
         <Grid ColumnSpacing="12">
             <Grid.ColumnDefinitions>

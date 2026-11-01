@@ -11,6 +11,7 @@ namespace Padmon.Views;
 public sealed partial class SettingsPage : Page
 {
     private bool _syncingColors;
+    private NotificationWindow? _placementCard;
 
     public SettingsPage()
     {
@@ -57,6 +58,70 @@ public sealed partial class SettingsPage : Page
             : delivery == NotificationDeliveryKind.Tray
                 ? "A test Windows tray notification in the bottom-right corner has been sent."
                 : "The Windows tray notification could not be created; padmon used the in-app card.";
+    }
+
+    private void NotificationPosition_Click(object sender, RoutedEventArgs e)
+    {
+        if (_placementCard is not null || App.MainWindow is not MainWindow mainWindow)
+        {
+            return;
+        }
+
+        _placementCard = mainWindow.ShowNotificationPlacement();
+
+        MoveNotificationButton.Visibility = Visibility.Collapsed;
+        ResetNotificationPositionButton.Visibility = Visibility.Collapsed;
+        SaveNotificationButton.Visibility = Visibility.Visible;
+        CancelNotificationButton.Visibility = Visibility.Visible;
+        NotificationPositionHint.Visibility = Visibility.Visible;
+    }
+
+    private void SaveNotificationPosition_Click(object sender, RoutedEventArgs e)
+    {
+        if (_placementCard is null)
+        {
+            return;
+        }
+
+        var position = _placementCard.Position;
+        ViewModel.SetNotificationPosition(position.X, position.Y);
+        EndNotificationPlacement();
+    }
+
+    private void CancelNotificationPosition_Click(object sender, RoutedEventArgs e)
+    {
+        EndNotificationPlacement();
+    }
+
+    private void EndNotificationPlacement()
+    {
+        if (_placementCard is null)
+        {
+            return;
+        }
+
+        if (App.MainWindow is MainWindow mainWindow)
+        {
+            mainWindow.HideNotificationPlacement();
+        }
+
+        _placementCard = null;
+        MoveNotificationButton.Visibility = Visibility.Visible;
+        ResetNotificationPositionButton.Visibility = Visibility.Visible;
+        SaveNotificationButton.Visibility = Visibility.Collapsed;
+        CancelNotificationButton.Visibility = Visibility.Collapsed;
+        NotificationPositionHint.Visibility = Visibility.Collapsed;
+    }
+
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        EndNotificationPlacement();
+        base.OnNavigatedFrom(e);
+    }
+
+    private void ResetNotificationPosition_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.ResetNotificationPosition();
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)

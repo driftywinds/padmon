@@ -11,6 +11,12 @@ public sealed partial class NotificationWindow : Window
 {
     private readonly DispatcherQueueTimer _hideTimer;
     private readonly DispatcherQueueTimer _borderTimer;
+    private bool _isPlacement;
+    private bool _dragging;
+    private NativePoint _dragStartCursor;
+    private PointInt32 _dragStartWindow;
+
+    public PointInt32 Position => AppWindow.Position;
 
     public NotificationWindow()
     {
@@ -43,9 +49,11 @@ public sealed partial class NotificationWindow : Window
 
     public void ShowMessage(string title, string body)
     {
+        _isPlacement = false;
+        _hideTimer.Stop();
         TitleText.Text = title;
         BodyText.Text = body;
-        PositionBottomRight();
+        PositionForNotification();
         ApplyPillShape();
 
         AppWindow.Show();
@@ -57,12 +65,70 @@ public sealed partial class NotificationWindow : Window
         _hideTimer.Start();
     }
 
+    public void ShowForPlacement()
+    {
+        _isPlacement = true;
+        _hideTimer.Stop();
+        TitleText.Text = "Notification position";
+        BodyText.Text = "Drag this card anywhere on any display, then save its position.";
+        PositionForNotification();
+        ApplyPillShape();
+
+        AppWindow.Show();
+        ApplyPillShape();
+        _borderTimer.Stop();
+        _borderTimer.Start();
+        Activate();
+    }
+
+    public void HideForPlacement()
+    {
+        if (!_isPlacement)
+        {
+            return;
+        }
+
+        _isPlacement = false;
+        _hideTimer.Stop();
+        _borderTimer.Stop();
+        AppWindow.Hide();
+    }
+
+    private void PositionForNotification()
+    {
+        var settings = App.Services.Settings;
+
+        if (settings.NotificationPositionX is int x &&
+            settings.NotificationPositionY is int y)
+        {
+            AppWindow.Move(ClampToWorkArea(new PointInt32(x, y)));
+            return;
+        }
+
+        PositionBottomRight();
+    }
+
+    private PointInt32 ClampToWorkArea(PointInt32 point)
+    {
+        var display = DisplayArea.GetFromPoint(point, DisplayAreaFallback.Nearest);
+        var workArea = display.WorkArea;
+        var size = AppWindow.Size;
+
+        var maxX = Math.Max(workArea.X, workArea.X + workArea.Width - size.Width);
+        var maxY = Math.Max(workArea.Y, workArea.Y + workArea.Height - size.Height);
+
+        return new PointInt32(
+            Math.Clamp(point.X, workArea.X, maxX),
+            Math.Clamp(point.Y, workArea.Y, maxY));
+    }
+
     private void PositionBottomRight()
     {
         var display = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary);
         var workArea = display.WorkArea;
-        var x = workArea.X + workArea.Width - 410;
-        var y = workArea.Y + workArea.Height - 120;
+        var size = AppWindow.Size;
+        var x = workArea.X + workArea.Width - size.Width - 20;
+        var y = workArea.Y + workArea.Height - size.Height - 24;
         AppWindow.Move(new PointInt32(x, y));
     }
 
@@ -204,8 +270,60 @@ public sealed partial class NotificationWindow : Window
         AppWindow.Hide();
     }
 
+    private void Root_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_isPlacement || !GetCursorPos(out var cursor))
+        {
+            return;
+        }
+
+        _dragStartCursor = cursor;
+        _dragStartWindow = AppWindow.Position;
+        _dragging = Root.CapturePointer(e.Pointer);
+
+        if (_dragging)
+        {
+            e.Handled = true;
+        }
+    }
+
+    private void Root_PointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_dragging || !GetCursorPos(out var cursor))
+        {
+            return;
+        }
+
+        var x = _dragStartWindow.X + cursor.X - _dragStartCursor.X;
+        var y = _dragStartWindow.Y + cursor.Y - _dragStartCursor.Y;
+        AppWindow.Move(new PointInt32(x, y));
+        e.Handled = true;
+    }
+
+    private void Root_PointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_dragging)
+        {
+            return;
+        }
+
+        _dragging = false;
+        Root.ReleasePointerCapture(e.Pointer);
+        e.Handled = true;
+    }
+
+    private void Root_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
+    {
+        _dragging = false;
+    }
+
     private void Root_Tapped(object sender, TappedRoutedEventArgs e)
     {
+        if (_isPlacement)
+        {
+            return;
+        }
+
         if (App.MainWindow is MainWindow mainWindow)
         {
             mainWindow.AppWindow.Show();
@@ -214,4 +332,8 @@ public sealed partial class NotificationWindow : Window
 
         HideWindow();
     }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+    private static extern bool GetCursorPos(out NativePoint point);
 }

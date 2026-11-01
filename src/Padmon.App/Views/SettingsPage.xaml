@@ -277,6 +277,64 @@
                                 Style="{StaticResource CaptionStyle}"
                                 Text="{x:Bind ViewModel.NotificationTestStatus, Mode=OneWay}"
                                 TextWrapping="Wrap" />
+                            <Border Margin="0,14" Style="{StaticResource DividerStyle}" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock Style="{StaticResource CardTitleStyle}" Text="In-app card position" />
+                                    <TextBlock
+                                        Style="{StaticResource CardSubtitleStyle}"
+                                        Text="Drag the test card where you want notifications, including another monitor." />
+                                </StackPanel>
+                                <StackPanel
+                                    Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    Orientation="Horizontal"
+                                    Spacing="8">
+                                    <Button
+                                        x:Name="MoveNotificationButton"
+                                        AutomationProperties.Name="Move test notification card"
+                                        Click="NotificationPosition_Click"
+                                        Content="Move test card" />
+                                    <Button
+                                        x:Name="SaveNotificationButton"
+                                        AutomationProperties.Name="Save notification position"
+                                        Click="SaveNotificationPosition_Click"
+                                        Content="Save position"
+                                        Visibility="Collapsed" />
+                                    <HyperlinkButton
+                                        x:Name="CancelNotificationButton"
+                                        AutomationProperties.Name="Cancel notification position"
+                                        Click="CancelNotificationPosition_Click"
+                                        Content="Cancel"
+                                        FontSize="12"
+                                        Padding="0"
+                                        Visibility="Collapsed" />
+                                    <HyperlinkButton
+                                        x:Name="ResetNotificationPositionButton"
+                                        AutomationProperties.Name="Reset notification position"
+                                        Click="ResetNotificationPosition_Click"
+                                        Content="Reset"
+                                        FontSize="12"
+                                        Padding="0"
+                                        ToolTipService.ToolTip="Return to the default bottom-right position" />
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock
+                                x:Name="NotificationPositionHint"
+                                Margin="0,10,0,0"
+                                Style="{StaticResource CaptionStyle}"
+                                Text="Drag the test card anywhere on any display, then choose Save position."
+                                TextWrapping="Wrap"
+                                Visibility="Collapsed" />
+                            <TextBlock
+                                Margin="0,10,0,0"
+                                Style="{StaticResource CaptionStyle}"
+                                Text="{x:Bind ViewModel.NotificationPositionStatus, Mode=OneWay}"
+                                TextWrapping="Wrap" />
                         </StackPanel>
                     </Border>
                 </StackPanel>

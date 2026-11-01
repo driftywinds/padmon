@@ -116,6 +116,32 @@ public sealed class SettingsViewModel : ObservableObject
         set => SetProperty(ref _notificationTestStatus, value);
     }
 
+    public bool HasCustomNotificationPosition =>
+        _settings.NotificationPositionX is not null &&
+        _settings.NotificationPositionY is not null;
+
+    public string NotificationPositionStatus => HasCustomNotificationPosition
+        ? "Custom position saved."
+        : "Default: bottom-right corner.";
+
+    public void SetNotificationPosition(int x, int y)
+    {
+        _settings.NotificationPositionX = x;
+        _settings.NotificationPositionY = y;
+        OnPropertyChanged(nameof(HasCustomNotificationPosition));
+        OnPropertyChanged(nameof(NotificationPositionStatus));
+        _ = SaveAsync();
+    }
+
+    public void ResetNotificationPosition()
+    {
+        _settings.NotificationPositionX = null;
+        _settings.NotificationPositionY = null;
+        OnPropertyChanged(nameof(HasCustomNotificationPosition));
+        OnPropertyChanged(nameof(NotificationPositionStatus));
+        _ = SaveAsync();
+    }
+
     public bool NativeNotifications
     {
         get => _settings.UseNativeNotifications;
