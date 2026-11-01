@@ -16,7 +16,17 @@
 
 It is deliberately **not** a controller configuration suite. There are no remaps, macros, deadzone editors, or per-game profiles. The job is to make controllers visible, understandable, and pleasant to keep track of.
 
-![padmon controllers view](docs/images/controllers.png)
+## Screenshots
+
+A quick look at the main surfaces. Click any shot for the full-size image.
+
+| Preview tester | Settings |
+| :---: | :---: |
+| [![Preview tester](docs/images/screenshot-1-preview.png)](docs/images/screenshot-1-preview.png) | [![Settings](docs/images/screenshot-2-settings.png)](docs/images/screenshot-2-settings.png) |
+
+| Controllers | Update |
+| :---: | :---: |
+| [![Controllers](docs/images/screenshot-3-controllers.png)](docs/images/screenshot-3-controllers.png) | [![Update](docs/images/screenshot-4-update.png)](docs/images/screenshot-4-update.png) |
 
 ## What padmon does
 
