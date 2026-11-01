@@ -420,13 +420,42 @@ class TesterApp {
             let result;
 
             if (canPlay) {
-                // One full-strength burst on both motors.
-                result = await actuator.playEffect(actuator.type ?? 'dual-rumble', {
+                // Refresh the effect continuously. A single long effect is
+                // dropped to a feeble buzz by some controllers; repeatedly
+                // re-sending a short effect keeps both motors at full strength.
+                const effectType = actuator.type ?? 'dual-rumble';
+                const effect = {
                     startDelay: 0,
-                    duration: 1500,
+                    duration: 100,
                     weakMagnitude: 1,
                     strongMagnitude: 1,
-                });
+                };
+                const end = performance.now() + 1500;
+                let accepted = false;
+
+                while (performance.now() < end) {
+                    try {
+                        void actuator.playEffect(effectType, effect)
+                            .then((value) => {
+                                if (value === 'complete') {
+                                    accepted = true;
+                                }
+                            })
+                            .catch((error) => {
+                                console.warn('[padmon] rumble effect rejected', error);
+                            });
+                    } catch (error) {
+                        console.warn('[padmon] rumble effect failed', error);
+                    }
+
+                    await new Promise((resolve) => setTimeout(resolve, 10));
+                }
+
+                if (typeof actuator.reset === 'function') {
+                    await actuator.reset().catch(() => {});
+                }
+
+                result = accepted ? 'complete' : 'rejected';
             } else {
                 result = (await haptic.pulse(1, 1500)) ? 'complete' : 'rejected';
             }

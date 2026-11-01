@@ -185,7 +185,10 @@ public sealed class WindowsGamingControllerSource : IControllerSource, IAsyncDis
             while (DateTimeOffset.UtcNow < end && !cancellationToken.IsCancellationRequested)
             {
                 gamepad.Vibration = vibration;
-                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+
+                // Refresh continuously; some controllers drop a one-shot vibration
+                // almost immediately and need a steady stream of updates.
+                await Task.Delay(10, cancellationToken).ConfigureAwait(false);
             }
 
             return true;

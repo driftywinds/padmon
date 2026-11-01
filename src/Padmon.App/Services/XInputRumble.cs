@@ -42,7 +42,10 @@ internal static class XInputRumble
                     }
                 }
 
-                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                // Some controllers decay the motors almost immediately unless the
+                // state is refreshed continuously. 100 ms was enough to make the
+                // rumble feel feeble; 10 ms keeps both motors at full strength.
+                await Task.Delay(10, cancellationToken).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)

@@ -101,7 +101,7 @@ public sealed class SdlControllerSource : IControllerSource
         Interlocked.Exchange(ref _livePreview, enabled ? 1 : 0);
     }
 
-    public ValueTask<bool> RumbleAsync(
+    public async ValueTask<bool> RumbleAsync(
         string stableKey,
         float lowFrequency,
         float highFrequency,
@@ -110,33 +110,78 @@ public sealed class SdlControllerSource : IControllerSource
     {
         if (cancellationToken.IsCancellationRequested || string.IsNullOrWhiteSpace(stableKey))
         {
-            return ValueTask.FromResult(false);
+            return false;
         }
+
+        RuntimeDevice? runtime;
 
         lock (_gate)
         {
-            var runtime = _devices.Values.FirstOrDefault(
+            runtime = _devices.Values.FirstOrDefault(
                 candidate => string.Equals(candidate.Device.StableKey, stableKey, StringComparison.Ordinal));
-
-            if (runtime is null)
-            {
-                return ValueTask.FromResult(false);
-            }
-
-            var low = (ushort)(Math.Clamp(lowFrequency, 0f, 1f) * ushort.MaxValue);
-            var high = (ushort)(Math.Clamp(highFrequency, 0f, 1f) * ushort.MaxValue);
-            var durationMilliseconds = (uint)Math.Clamp(duration.TotalMilliseconds, 1, 5_000);
-
-            var success = runtime.IsGamepad
-                ? SDL.RumbleGamepad(runtime.Handle, low, high, durationMilliseconds)
-                : SDL.RumbleJoystick(
-                    runtime.Handle,
-                    (short)(low / 2),
-                    (short)(high / 2),
-                    (int)durationMilliseconds);
-
-            return ValueTask.FromResult(success);
         }
+
+        if (runtime is null)
+        {
+            return false;
+        }
+
+        var low = (ushort)(Math.Clamp(lowFrequency, 0f, 1f) * ushort.MaxValue);
+        var high = (ushort)(Math.Clamp(highFrequency, 0f, 1f) * ushort.MaxValue);
+        var end = DateTimeOffset.UtcNow + duration;
+        var anySucceeded = false;
+
+        try
+        {
+            while (DateTimeOffset.UtcNow < end && !cancellationToken.IsCancellationRequested)
+            {
+                lock (_gate)
+                {
+                    // The device can disappear while the pulse is running. Never
+                    // touch a handle after it has been removed from the live map.
+                    if (!_devices.ContainsValue(runtime))
+                    {
+                        break;
+                    }
+
+                    var success = runtime.IsGamepad
+                        ? SDL.RumbleGamepad(runtime.Handle, low, high, 100)
+                        : SDL.RumbleJoystick(
+                            runtime.Handle,
+                            (short)(low / 2),
+                            (short)(high / 2),
+                            100);
+
+                    anySucceeded |= success;
+                }
+
+                // Keep refreshing the motors. A single long SDL rumble packet
+                // is dropped almost immediately by some XInput controllers.
+                await Task.Delay(10, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        finally
+        {
+            lock (_gate)
+            {
+                if (_devices.ContainsValue(runtime))
+                {
+                    if (runtime.IsGamepad)
+                    {
+                        _ = SDL.RumbleGamepad(runtime.Handle, 0, 0, 1);
+                    }
+                    else
+                    {
+                        _ = SDL.RumbleJoystick(runtime.Handle, 0, 0, 1);
+                    }
+                }
+            }
+        }
+
+        return anySucceeded;
     }
 
     public async ValueTask DisposeAsync()
