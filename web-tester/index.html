@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>padmon web tester</title>
+    <meta name="description" content="Test a game controller in the browser: live button, stick, trigger and raw-axis readouts in the padmon controller tester layout.">
+    <meta name="theme-color" content="#111214">
+    <link rel="icon" href="assets/padmon-mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="css/tester.css">
+    <script>
+        // Apply the stored/system theme before the first paint so the page does not
+        // flash the wrong palette while the module below loads.
+        (function () {
+            try {
+                var stored = localStorage.getItem('padmon-web-theme') || 'system';
+                var light = window.matchMedia('(prefers-color-scheme: light)').matches;
+                document.documentElement.dataset.theme =
+                    stored === 'system' ? (light ? 'light' : 'dark') : stored;
+            } catch (error) {
+                // Storage can be blocked; the module applies the system theme instead.
+            }
+        })();
+    </script>
+</head>
+<body>
+    <header class="app-bar">
+        <div class="app-bar-brand">
+            <svg class="app-bar-mark" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                <path fill="currentColor" d="M3.5857,10.0000 L4.9997,8.7970 L4.9997,11.2030 L3.5857,10.0000 Z M14.9997,8.7970 L16.4147,10.0000 L14.9997,11.2030 L14.9997,8.7970 Z M8.7967,15.0000 L11.2027,15.0000 L9.9997,16.4140 L8.7967,15.0000 Z M9.9997,3.5860 L11.2027,5.0000 L8.7967,5.0000 L9.9997,3.5860 Z M17.9997,12.0000 C17.9997,12.5520 17.5527,13.0000 16.9997,13.0000 L14.9997,13.0000 C13.8957,13.0000 12.9997,13.8950 12.9997,15.0000 L12.9997,17.0000 C12.9997,17.5520 12.5527,18.0000 11.9997,18.0000 L7.9997,18.0000 C7.4477,18.0000 6.9997,17.5520 6.9997,17.0000 L6.9997,15.0000 C6.9997,13.8950 6.1047,13.0000 4.9997,13.0000 L2.9997,13.0000 C2.4477,13.0000 1.9997,12.5520 1.9997,12.0000 L1.9997,8.0000 C1.9997,7.4480 2.4477,7.0000 2.9997,7.0000 L4.9997,7.0000 C6.1047,7.0000 6.9997,6.1050 6.9997,5.0000 L6.9997,3.0000 C6.9997,2.4480 7.4477,2.0000 7.9997,2.0000 L11.9997,2.0000 C12.5527,2.0000 12.9997,2.4480 12.9997,3.0000 L12.9997,5.0000 C12.9997,6.1050 13.8957,7.0000 14.9997,7.0000 L16.9997,7.0000 C17.5527,7.0000 17.9997,7.4480 17.9997,8.0000 L17.9997,12.0000 Z M17.9997,5.0000 L15.9997,5.0000 C15.4477,5.0000 14.9997,4.5520 14.9997,4.0000 L14.9997,2.0000 C14.9997,0.8950 14.1047,0.0000 12.9997,0.0000 L6.9997,0.0000 C5.8957,0.0000 4.9997,0.8950 4.9997,2.0000 L4.9997,4.0000 C4.9997,4.5520 4.5527,5.0000 3.9997,5.0000 L1.9997,5.0000 C0.8957,5.0000 -0.0003,5.8950 -0.0003,7.0000 L-0.0003,13.0010 C-0.0003,14.1050 0.8947,15.0000 1.9987,15.0000 L4.0007,15.0000 C4.5527,15.0000 4.9997,15.4500 4.9997,16.0020 L4.9997,18.0000 C4.9997,19.1050 5.8957,20.0000 6.9997,20.0000 L12.9997,20.0000 C14.1047,20.0000 14.9997,19.1050 14.9997,18.0000 L14.9997,16.0000 C14.9997,15.4480 15.4477,15.0000 15.9997,15.0000 L17.9997,15.0000 C19.1047,15.0000 19.9997,14.1050 19.9997,13.0000 L19.9997,7.0000 C19.9997,5.8950 19.1047,5.0000 17.9997,5.0000 L17.9997,5.0000 Z" />
+            </svg>
+            <span class="app-bar-name">padmon</span>
+            <span class="app-bar-note">controller monitor</span>
+        </div>
+        <div class="app-bar-actions">
+            <label class="visually-hidden" for="controllerSelect">Controller</label>
+            <select class="select" id="controllerSelect" hidden></select>
+
+            <div class="segmented" role="group" aria-label="Tester view">
+                <button type="button" class="segmented-button is-selected" data-view="diagram" aria-pressed="true">Diagram</button>
+                <button type="button" class="segmented-button" data-view="classic" aria-pressed="false">Classic</button>
+            </div>
+
+            <button type="button" class="icon-button" id="themeButton" title="Theme: system" aria-label="Change theme">
+                <svg id="themeIconSystem" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                    <circle cx="8" cy="8" r="5.4" fill="none" stroke="currentColor" stroke-width="1.4" />
+                    <path d="M8 2.6a5.4 5.4 0 0 1 0 10.8Z" fill="currentColor" />
+                </svg>
+                <svg id="themeIconLight" viewBox="0 0 16 16" aria-hidden="true" focusable="false" hidden>
+                    <circle cx="8" cy="8" r="3.1" fill="currentColor" />
+                    <g stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+                        <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.2 3.2l1.4 1.4M11.4 11.4l1.4 1.4M12.8 3.2l-1.4 1.4M4.6 11.4l-1.4 1.4" />
+                    </g>
+                </svg>
+                <svg id="themeIconDark" viewBox="0 0 16 16" aria-hidden="true" focusable="false" hidden>
+                    <path d="M6.3 1.8A6.2 6.2 0 1 0 14.2 9.7 6.5 6.5 0 0 1 6.3 1.8Z" fill="currentColor" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <main class="page">
+        <div class="page-root" id="pageRoot">
+            <div class="page-back">
+                <a class="button" href="https://github.com/driftywinds/padmon">Back to padmon</a>
+            </div>
+
+            <div class="page-head">
+                <div class="page-head-text">
+                    <h1 class="page-title" id="controllerName">Preview controller</h1>
+                    <p class="page-subtitle" id="controllerSubtitle">Simulated input · no controller connected</p>
+                </div>
+                <div class="page-head-actions">
+                    <span class="pill" id="batteryText">Preview</span>
+                    <button type="button" class="button" id="rumbleButton">Test rumble</button>
+                </div>
+            </div>
+
+            <div class="info-bar info-bar-warning" id="disconnectedBar" hidden>
+                <svg class="info-bar-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                    <path fill="currentColor" d="M10 2.6 18.4 17H1.6L10 2.6Zm0 3.6L4.4 15.8h11.2L10 6.2Zm-.8 2.4h1.6v4H9.2v-4Zm0 5h1.6v1.6H9.2v-1.6Z" />
+                </svg>
+                <div class="info-bar-text">
+                    <p class="info-bar-title">Controller disconnected</p>
+                    <p class="info-bar-message">The last input state is still shown below.</p>
+                </div>
+            </div>
+
+            <div class="info-bar" id="previewBar" hidden>
+                <svg class="info-bar-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                    <path fill="currentColor" d="M10 1.8a8.2 8.2 0 1 0 0 16.4 8.2 8.2 0 0 0 0-16.4Zm0 1.6a6.6 6.6 0 1 1 0 13.2 6.6 6.6 0 0 1 0-13.2Zm-.8 2.4h1.6v1.6H9.2V5.8Zm0 3h1.6v5.4H9.2V8.8Z" />
+                </svg>
+                <div class="info-bar-text">
+                    <p class="info-bar-title">Preview mode</p>
+                    <p class="info-bar-message">No controller is connected, so this shows simulated input to let you check the tester layout. Connect a controller to test it for real.</p>
+                </div>
+            </div>
+
+            <div class="info-bar" id="rumbleBar" hidden>
+                <svg class="info-bar-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                    <path fill="currentColor" d="M10 1.8a8.2 8.2 0 1 0 0 16.4 8.2 8.2 0 0 0 0-16.4Zm0 1.6a6.6 6.6 0 1 1 0 13.2 6.6 6.6 0 0 1 0-13.2Zm-.8 2.4h1.6v1.6H9.2V5.8Zm0 3h1.6v5.4H9.2V8.8Z" />
+                </svg>
+                <div class="info-bar-text">
+                    <p class="info-bar-title">Rumble unavailable</p>
+                    <p class="info-bar-message">This browser did not expose a rumble motor for the controller in its current mode.</p>
+                </div>
+                <button type="button" class="info-bar-close" id="rumbleBarClose" aria-label="Dismiss">
+                    <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+                        <path fill="currentColor" d="m6 4.6 3.4-3.4 1.4 1.4L7.4 6l3.4 3.4-1.4 1.4L6 7.4l-3.4 3.4-1.4-1.4L4.6 6 1.2 2.6l1.4-1.4L6 4.6Z" />
+                    </svg>
+                </button>
+            </div>
+
+            <section class="diagram-view" id="diagramView">
+                <div class="stats-panel">
+                    <div class="stats-row">
+                        <div class="stat">
+                            <span class="stat-label">INDEX</span>
+                            <span class="stat-value" id="indexText">0</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">CONNECTED</span>
+                            <span class="stat-value" id="connectedText">Yes</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">MAPPING</span>
+                            <span class="stat-value" id="mappingText">standard</span>
+                        </div>
+                        <div class="stat stat-timestamp">
+                            <span class="stat-label">TIMESTAMP</span>
+                            <span class="stat-value" id="timestampText">0.00000</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">VIBRATION</span>
+                            <span class="stat-value" id="vibrationText">n/a</span>
+                        </div>
+                    </div>
+
+                    <div class="pad-grid" id="padButtonCells"></div>
+
+                    <div class="stick-groups">
+                        <div class="stick-group">
+                            <span class="stat-label">L STICK</span>
+                            <div class="stick-group-row">
+                                <div class="pad-grid pad-grid-axes" id="leftAxisCells"></div>
+                                <div class="stick-graph-host" id="leftGraph"></div>
+                            </div>
+                        </div>
+                        <div class="stick-group">
+                            <span class="stat-label">R STICK</span>
+                            <div class="stick-group-row">
+                                <div class="pad-grid pad-grid-axes" id="rightAxisCells"></div>
+                                <div class="stick-graph-host" id="rightGraph"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <aside class="card diagram-card">
+                    <div class="diagram-host" id="diagram"></div>
+                    <div class="divider"></div>
+                    <div class="readout-grid">
+                        <span class="readout-row-label">L STICK</span>
+                        <div class="readout">
+                            <span class="stat-label">X</span>
+                            <span class="readout-value" id="leftXText">0.00000</span>
+                        </div>
+                        <div class="readout">
+                            <span class="stat-label">Y</span>
+                            <span class="readout-value" id="leftYText">0.00000</span>
+                        </div>
+                        <div class="readout">
+                            <span class="stat-label">MAGNITUDE</span>
+                            <span class="readout-value" id="leftMagnitudeText">0.00000</span>
+                        </div>
+
+                        <span class="readout-row-label">R STICK</span>
+                        <div class="readout">
+                            <span class="stat-label">X</span>
+                            <span class="readout-value" id="rightXText">0.00000</span>
+                        </div>
+                        <div class="readout">
+                            <span class="stat-label">Y</span>
+                            <span class="readout-value" id="rightYText">0.00000</span>
+                        </div>
+                        <div class="readout">
+                            <span class="stat-label">MAGNITUDE</span>
+                            <span class="readout-value" id="rightMagnitudeText">0.00000</span>
+                        </div>
+
+                        <span class="readout-row-label">TRIGGERS</span>
+                        <div class="readout">
+                            <span class="stat-label">LT</span>
+                            <span class="readout-value" id="leftTriggerValueText">0.00</span>
+                        </div>
+                        <div class="readout">
+                            <span class="stat-label">RT</span>
+                            <span class="readout-value" id="rightTriggerValueText">0.00</span>
+                        </div>
+                        <span></span>
+
+                        <span class="readout-row-label">BUMPERS</span>
+                        <div class="readout">
+                            <span class="stat-label">LB</span>
+                            <span class="readout-value" id="leftBumperText">0.00</span>
+                        </div>
+                        <div class="readout">
+                            <span class="stat-label">RB</span>
+                            <span class="readout-value" id="rightBumperText">0.00</span>
+                        </div>
+                        <span></span>
+                    </div>
+                </aside>
+            </section>
+
+            <section class="classic-view" id="classicView" hidden>
+                <div class="card-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Sticks</h2>
+                            <p class="card-subtitle">X and Y, normalized from -1 to 1.</p>
+                        </div>
+                        <div class="sticks-grid">
+                            <div class="stick-dial-block">
+                                <svg class="stick-dial" viewBox="0 0 142 142" role="img" aria-label="Left stick position">
+                                    <circle class="dial-bg" cx="71" cy="71" r="70.5" />
+                                    <circle class="dial-inner" cx="71" cy="71" r="48" />
+                                    <circle class="dial-dot" id="leftStickDot" cx="71" cy="71" r="11" />
+                                </svg>
+                                <span class="stick-dial-caption">Left stick</span>
+                                <span class="mono" id="leftStickText">0.00, 0.00</span>
+                            </div>
+                            <div class="stick-dial-block">
+                                <svg class="stick-dial" viewBox="0 0 142 142" role="img" aria-label="Right stick position">
+                                    <circle class="dial-bg" cx="71" cy="71" r="70.5" />
+                                    <circle class="dial-inner" cx="71" cy="71" r="48" />
+                                    <circle class="dial-dot" id="rightStickDot" cx="71" cy="71" r="11" />
+                                </svg>
+                                <span class="stick-dial-caption">Right stick</span>
+                                <span class="mono" id="rightStickText">0.00, 0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card card-triggers">
+                        <div class="card-header">
+                            <h2 class="card-title">Triggers</h2>
+                            <p class="card-subtitle">Analog shoulder travel, 0 to 100%.</p>
+                        </div>
+                        <div class="trigger-block">
+                            <div class="trigger-head">
+                                <span class="caption">LT</span>
+                                <span class="mono" id="leftTriggerText">0%</span>
+                            </div>
+                            <div class="progress"><div class="progress-fill" id="leftTriggerBar"></div></div>
+                        </div>
+                        <div class="trigger-block">
+                            <div class="trigger-head">
+                                <span class="caption">RT</span>
+                                <span class="mono" id="rightTriggerText">0%</span>
+                            </div>
+                            <div class="progress"><div class="progress-fill" id="rightTriggerBar"></div></div>
+                        </div>
+                        <div class="divider"></div>
+                        <div class="card-note">
+                            <p class="caption">Shoulder buttons</p>
+                            <p class="body-text">LB and RB light up in the button grid below.</p>
+                            <p class="caption">Digital bumpers and extra buttons are reported by the Gamepad API.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card card-buttons">
+                    <div class="card-header-row">
+                        <div class="card-header">
+                            <h2 class="card-title">Buttons</h2>
+                            <p class="card-subtitle">Every exposed button, live.</p>
+                        </div>
+                        <span class="pill" id="mappingBadge">PREVIEW</span>
+                    </div>
+                    <div class="toggle-grid" id="buttonGrid"></div>
+                </div>
+
+                <div class="card-grid">
+                    <div class="card card-details">
+                        <div class="card-header">
+                            <h2 class="card-title">Raw axes</h2>
+                            <p class="card-subtitle">Normalized value, then the raw reading.</p>
+                        </div>
+                        <div class="axis-list" id="axisList"></div>
+                    </div>
+
+                    <div class="card card-details">
+                        <div class="card-header">
+                            <h2 class="card-title">Device</h2>
+                            <p class="card-subtitle">What padmon knows about this controller.</p>
+                        </div>
+                        <div class="device-grid">
+                            <span class="device-label">Hardware</span>
+                            <span class="device-value" id="hardwareText">Preview controller</span>
+                            <span class="device-label">Type</span>
+                            <span class="device-value" id="kindText">Gamepad</span>
+                            <span class="device-label">Connection</span>
+                            <span class="device-value" id="connectionText">Virtual</span>
+                            <span class="device-label">Stable key</span>
+                            <span class="device-value mono" id="stableKeyText">preview:demo</span>
+                            <span class="device-label">Hats</span>
+                            <span class="device-value mono" id="hatsText">—</span>
+                        </div>
+                        <p class="device-note">padmon reads these values; it does not change them.</p>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="page-footer">
+                <p>padmon web tester · reads the Gamepad API locally, nothing leaves your browser.</p>
+                <p><a href="https://github.com/driftywinds/padmon">padmon</a> · Chromium and Firefox</p>
+            </footer>
+        </div>
+    </main>
+
+    <noscript>
+        <p style="margin: 24px;">The padmon web tester needs JavaScript to read the Gamepad API.</p>
+    </noscript>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

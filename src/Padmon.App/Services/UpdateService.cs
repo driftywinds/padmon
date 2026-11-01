@@ -34,8 +34,26 @@ public sealed record UpdateCheckResult(
 public sealed class UpdateService
 {
     private const string ReleasesApi = "https://api.github.com/repos/driftywinds/padmon/releases/latest";
+
+    // The updater appends one line per step to a single log in the updates folder.
+    private const long MaxUpdateLogBytes = 1024 * 1024;
+
+    // A staging folder touched this recently may belong to an update that is still
+    // downloading or waiting for the old process to exit, so startup leaves it alone.
+    private static readonly TimeSpan RecentPayloadWindow = TimeSpan.FromMinutes(10);
+
     private static readonly string PortableExecutable =
         Environment.GetEnvironmentVariable("PADMON_PORTABLE_EXE") ?? string.Empty;
+
+    /// <summary>
+    /// Root of the downloaded update payloads. Every release is staged in a folder named
+    /// after its version, and the whole payload becomes disposable once the release has
+    /// been copied into place. Only the updater log stays behind after a successful update.
+    /// </summary>
+    public static string UpdatesRoot { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "padmon",
+        "updates");
 
     public static string CurrentVersion { get; } = ReadCurrentVersion();
 
@@ -252,11 +270,7 @@ public sealed class UpdateService
                 "This copy of padmon is installed from the Microsoft Store. Use the Store to update it.");
         }
 
-        var root = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "padmon",
-            "updates",
-            update.LatestVersion);
+        var root = Path.Combine(UpdatesRoot, update.LatestVersion);
         Directory.CreateDirectory(root);
 
         var downloaded = Path.Combine(root, update.AssetName ?? "update.bin");
@@ -305,11 +319,20 @@ public sealed class UpdateService
             EnsureWritable(Path.Combine(target, "Padmon.exe"));
         }
 
-        var script = Path.Combine(root, "install.ps1");
-        var log = Path.Combine(root, "update.log");
+        // The script and log sit beside the version folders instead of inside them, so
+        // deleting the payload after the install does not take the diagnostics with it.
+        var script = Path.Combine(UpdatesRoot, "install.ps1");
+        var log = Path.Combine(UpdatesRoot, "update.log");
+        TrimUpdateLog(log);
         await File.WriteAllTextAsync(
             script,
-            BuildUpdaterScript(sourcePath, targetDirectory, restartPath, isPortableLauncher, log),
+            BuildUpdaterScript(
+                sourcePath,
+                targetDirectory,
+                restartPath,
+                isPortableLauncher,
+                UpdatesRoot,
+                log),
             new UTF8Encoding(encoderShouldEmitUTF8Identifier: true),
             cancellationToken).ConfigureAwait(false);
 
@@ -329,20 +352,110 @@ public sealed class UpdateService
         PadmonLog.Info($"update installer started for {update.LatestVersion}");
     }
 
+    /// <summary>
+    /// Removes update payloads that are no longer needed. The updater already does this as
+    /// soon as a release is copied into place; this sweep runs on startup to clear folders
+    /// left behind by earlier builds (or by updates that failed part-way), so the updates
+    /// folder never keeps multiple copies of the app.
+    /// </summary>
+    public static void CleanUpStaleUpdatePayloads()
+    {
+        try
+        {
+            if (!Directory.Exists(UpdatesRoot))
+            {
+                return;
+            }
+
+            foreach (var directory in Directory.EnumerateDirectories(UpdatesRoot))
+            {
+                var name = Path.GetFileName(directory);
+
+                // Never delete the folder the running app lives in, even if an unusual
+                // PADMON_PORTABLE_EXE setup points into the updates folder.
+                if (IsUnder(AppContext.BaseDirectory, directory) ||
+                    (!string.IsNullOrWhiteSpace(PortableExecutable) && IsUnder(PortableExecutable, directory)))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    // A recent payload may still belong to an update that is downloading or
+                    // waiting for the old process to exit, so leave it for the next launch.
+                    if (DateTime.UtcNow - Directory.GetLastWriteTimeUtc(directory) < RecentPayloadWindow)
+                    {
+                        continue;
+                    }
+
+                    Directory.Delete(directory, recursive: true);
+                    PadmonLog.Info($"removed stale update payload {name}");
+                }
+                catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+                {
+                    PadmonLog.Warn($"could not remove stale update payload {name}: {exception.Message}");
+                }
+            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            PadmonLog.Warn($"could not inspect the updates folder: {exception.Message}");
+        }
+    }
+
+    private static void TrimUpdateLog(string path)
+    {
+        try
+        {
+            var info = new FileInfo(path);
+            if (info.Exists && info.Length > MaxUpdateLogBytes)
+            {
+                info.Delete();
+            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            PadmonLog.Warn($"could not trim the update log: {exception.Message}");
+        }
+    }
+
     private static string BuildUpdaterScript(
         string source,
         string targetDirectory,
         string restartPath,
         bool isPortable,
+        string updatesRoot,
         string log)
     {
         var oldWorkingDirectory = Path.GetDirectoryName(restartPath) ?? targetDirectory;
 
         return $$"""
 $ErrorActionPreference = 'Stop'
+$updatesRoot = '{{EscapePath(updatesRoot)}}'
+$restartPath = '{{EscapePath(restartPath)}}'
 $log = '{{EscapePath(log)}}'
 function Write-UpdateLog($message) {
     Add-Content -LiteralPath $log -Value "$(Get-Date -Format o) $message"
+}
+
+function Remove-UpdatePayloads {
+    # The release is already copied into place, so the download and the extracted
+    # copy are disposable. Keeping only the log is what stops old versions piling up.
+    Get-ChildItem -LiteralPath $updatesRoot -Directory -ErrorAction SilentlyContinue |
+        ForEach-Object {
+            if ($restartPath -like "$($_.FullName)\*") {
+                Write-UpdateLog "kept $($_.Name) because the app runs from it"
+                return
+            }
+
+            try {
+                Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction Stop
+                Write-UpdateLog "removed update payload $($_.Name)"
+            }
+            catch {
+                Write-UpdateLog "could not remove update payload $($_.Name): $_"
+            }
+        }
 }
 
 try {
@@ -354,13 +467,15 @@ try {
         ? $"Copy-Item -LiteralPath '{EscapePath(source)}' -Destination '{EscapePath(restartPath)}' -Force"
         : $"Copy-Item -Path '{EscapePath(source)}\\*' -Destination '{EscapePath(targetDirectory)}' -Recurse -Force")}}
 
-    Start-Process -FilePath '{{EscapePath(restartPath)}}' -WorkingDirectory '{{EscapePath(oldWorkingDirectory)}}'
+    Remove-UpdatePayloads
+
+    Start-Process -FilePath $restartPath -WorkingDirectory '{{EscapePath(oldWorkingDirectory)}}'
     Write-UpdateLog 'update installed'
 }
 catch {
     Write-UpdateLog "update failed: $_"
     try {
-        Start-Process -FilePath '{{EscapePath(restartPath)}}' -WorkingDirectory '{{EscapePath(oldWorkingDirectory)}}'
+        Start-Process -FilePath $restartPath -WorkingDirectory '{{EscapePath(oldWorkingDirectory)}}'
     } catch {
     }
 

@@ -37,6 +37,11 @@ public partial class App : Application
         // attributed to padmon's registered identity, elevated or not.
         DesktopToastService.EnsureIdentity();
 
+        // Downloaded update payloads are disposable once an update is installed. The
+        // updater clears its own folder; this background sweep removes anything older
+        // builds left behind so the updates folder does not keep multiple versions.
+        _ = Task.Run(UpdateService.CleanUpStaleUpdatePayloads);
+
         Services = new AppServices(DispatcherQueue.GetForCurrentThread());
 
         var startHidden = Environment.GetCommandLineArgs()
