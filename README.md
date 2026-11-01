@@ -2,13 +2,13 @@
 
 <p align="center">
   <a href="https://apps.microsoft.com/detail/9PJC85NSMQ8X">
-    <img src="https://get.microsoft.com/images/en-us%20dark.svg" height="40" alt="Get padmon from Microsoft Store">
+    <img src="https://get.microsoft.com/images/en-us%20dark.svg" height="36" align="middle" alt="Get padmon from Microsoft Store">
   </a>
   <a href="https://github.com/driftywinds/padmon/releases/latest/download/Padmon-portable.exe">
-    <img src="https://img.shields.io/badge/Portable-Download-2F81F7?style=for-the-badge&logo=windows&logoColor=white" height="40" alt="Download the portable build">
+    <img src="https://img.shields.io/badge/Portable-Download-2F81F7?style=for-the-badge&logo=windows&logoColor=white" height="36" align="middle" alt="Download the portable build">
   </a>
   <a href="https://github.com/driftywinds/padmon/releases/latest/download/padmon-win-x64.zip">
-    <img src="https://img.shields.io/badge/Normal_install-Download-6E40C9?style=for-the-badge&logo=windows&logoColor=white" height="40" alt="Download the normal install">
+    <img src="https://img.shields.io/badge/Normal_install-Download-6E40C9?style=for-the-badge&logo=windows&logoColor=white" height="36" align="middle" alt="Download the normal install">
   </a>
 </p>
 
