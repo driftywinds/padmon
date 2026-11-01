@@ -63,7 +63,9 @@ export class GamepadSource {
         const present = new Set();
 
         for (const pad of pads) {
-            if (!pad) {
+            // Some browsers keep a stale record around with connected === false after
+            // a Bluetooth pad sleeps or drops; treat that as absent, not present.
+            if (!pad || pad.connected === false) {
                 continue;
             }
 
@@ -117,7 +119,9 @@ export class GamepadSource {
 
     /** A fresh Gamepad record, or null. The record must be re-read every frame. */
     getGamepad(index) {
-        return listGamepads()[index] ?? null;
+        // Match on pad.index rather than array position: not every browser keeps the
+        // two identical, and a missed match used to strand the page on "waiting".
+        return listGamepads().find((pad) => pad && pad.index === index) ?? null;
     }
 }
 
@@ -128,7 +132,12 @@ export function listGamepads() {
 
     // Keep the array positions: a browser reports an empty slot as null, and the
     // controller index is part of the identity the page shows.
-    return Array.prototype.slice.call(navigator.getGamepads());
+    try {
+        return Array.prototype.slice.call(navigator.getGamepads() ?? []);
+    } catch {
+        // Blocked by a permissions policy or an insecure context.
+        return [];
+    }
 }
 
 export function gamepadToSnapshot(pad) {

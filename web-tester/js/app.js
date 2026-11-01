@@ -235,6 +235,7 @@ class TesterApp {
     attachGamepad(index) {
         const pad = this.source.getGamepad(index);
         if (!pad) {
+            // The pad is registered but not readable yet; tick() retries while waiting.
             return;
         }
 
@@ -276,10 +277,25 @@ class TesterApp {
         const supported =
             typeof navigator.getGamepads === 'function' && window.isSecureContext;
 
+        let text;
+
         if (!supported) {
-            elements.waitingHint.textContent =
+            text =
                 'This browser cannot read gamepads on this page. Open it over HTTPS or '
                 + 'localhost in a current Chromium browser or Firefox.';
+        } else if (!document.hasFocus()) {
+            text =
+                'Click on this page first: browsers only report controller input to the '
+                + 'focused tab.';
+        } else {
+            text =
+                'The browser reports no controller yet. Press a button on it while this '
+                + 'tab is focused. If it still does not appear, the OS/browser is not '
+                + 'exposing it (try chrome://gamepad-internals or a USB cable).';
+        }
+
+        if (elements.waitingHint.textContent !== text) {
+            elements.waitingHint.textContent = text;
         }
     }
 
@@ -409,6 +425,19 @@ class TesterApp {
         // Polling is the reliable detection path: connect events are inconsistent
         // across browsers, so waiting must never depend on an event alone.
         this.source.poll();
+
+        if (this.mode === 'waiting') {
+            // Self-heal: if a pad is visible but the connect handler missed it (event
+            // fired before the pad was readable, or attach failed), pick it up here.
+            const index = this.source.indexes.find((i) => this.source.getGamepad(i));
+            if (index !== undefined) {
+                this.attachGamepad(index);
+            } else {
+                this.updateWaitingHint();
+            }
+
+            return;
+        }
 
         if (this.mode !== 'live' || !this.tester) {
             return;
