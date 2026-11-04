@@ -26,7 +26,7 @@ public sealed class CouchControlService : IDisposable
     private bool _enabled;
     private bool _syncingEnabled;
     private bool _disposed;
-    private bool _padmonActive = true;
+    private bool _padmonActive;
     private bool _lastPaused;
     private bool _lastLoggedEnabled;
     private long _snapshotHeartbeat;

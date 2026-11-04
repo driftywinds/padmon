@@ -204,7 +204,12 @@ public sealed class SdlControllerSource : IControllerSource
                 | SDL.InitFlags.Sensor
                 | SDL.InitFlags.Events;
 
-            PadmonLog.Info($"SDL init starting: {flags}");
+            // SDL's Windows joystick/gamepad backends otherwise stop
+            // delivering input when the process has no focused window. Couch
+            // Control must keep running while padmon is unfocused or hidden in
+            // the tray, so opt in before SDL starts.
+            SDL.SetHint("SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS", "1");
+            PadmonLog.Info($"SDL init starting: {flags} (background events on)");
 
             if (!SDL.Init(flags))
             {
