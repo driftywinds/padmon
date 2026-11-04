@@ -45,6 +45,11 @@ public sealed partial class MainWindow : Window, IDisposable
         Navigation.SelectedItem = Navigation.MenuItems[0];
         ContentFrame.Navigate(typeof(ControllersPage));
 
+        if (AppEnvironment.IsPackaged)
+        {
+            CouchNavItem.Visibility = Visibility.Collapsed;
+        }
+
         Activated += OnActivated;
         Activated += OnWindowActivated;
         Closed += OnClosed;
@@ -128,6 +133,7 @@ public sealed partial class MainWindow : Window, IDisposable
         _trayIcon?.Dispose();
         _trayIcon = null;
 
+        App.Services.Couch.Dispose();
         _notificationWindow?.Close();
         _notificationWindow = null;
     }
@@ -230,6 +236,7 @@ public sealed partial class MainWindow : Window, IDisposable
     {
         var pageType = tag switch
         {
+            "couch" => typeof(CouchControlPage),
             "history" => typeof(HistoryPage),
             "settings" => typeof(SettingsPage),
             "update" => typeof(UpdatePage),

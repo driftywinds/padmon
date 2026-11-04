@@ -28,6 +28,7 @@ public sealed class AppServices
         }
 
         Monitor = new ControllerMonitor(Input, History, dispatcher);
+        Couch = new CouchControlService(Monitor, () => Settings, SettingsStore, dispatcher);
     }
 
     public DispatcherQueue Dispatcher { get; }
@@ -41,6 +42,8 @@ public sealed class AppServices
     public IControllerSource Input { get; }
 
     public ControllerMonitor Monitor { get; }
+
+    public CouchControlService Couch { get; }
 
     public PadmonSettings Settings { get; private set; } = new();
 
@@ -63,5 +66,6 @@ public sealed class AppServices
             cancellationToken).ConfigureAwait(false);
 
         await Monitor.StartAsync(cancellationToken).ConfigureAwait(false);
+        Couch.SyncFromSettings();
     }
 }

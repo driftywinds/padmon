@@ -18,6 +18,8 @@ public sealed class ControllerMonitor : ObservableObject, IAsyncDisposable
 
     private bool _startCompleted;
     private bool _disposed;
+    private bool _testerPreview;
+    private bool _couchPreview;
     private string? _error;
 
     public ControllerMonitor(
@@ -41,6 +43,12 @@ public sealed class ControllerMonitor : ObservableObject, IAsyncDisposable
     public event EventHandler<ControllerViewModel>? ControllerDisconnected;
 
     public event EventHandler<string>? ErrorOccurred;
+
+    /// <summary>
+    /// Raw snapshots, raised on the SDL thread before they are marshalled to
+    /// the UI. Couch Control consumes these without waiting for the tester UI.
+    /// </summary>
+    public event EventHandler<ControllerSnapshotsEventArgs>? SnapshotsReceived;
 
     public bool IsMonitoring { get; private set; }
 
@@ -113,7 +121,19 @@ public sealed class ControllerMonitor : ObservableObject, IAsyncDisposable
 
     public void SetLivePreview(bool enabled)
     {
-        _source.SetLivePreview(enabled);
+        _testerPreview = enabled;
+        ApplyLivePreview();
+    }
+
+    public void SetCouchPreview(bool enabled)
+    {
+        _couchPreview = enabled;
+        ApplyLivePreview();
+    }
+
+    private void ApplyLivePreview()
+    {
+        _source.SetLivePreview(_testerPreview || _couchPreview);
     }
 
     public ValueTask<bool> RumbleAsync(
@@ -238,6 +258,8 @@ public sealed class ControllerMonitor : ObservableObject, IAsyncDisposable
 
     private void OnSnapshotsAvailable(object? sender, ControllerSnapshotsEventArgs args)
     {
+        SnapshotsReceived?.Invoke(this, args);
+
         _dispatcher.TryEnqueue(() =>
         {
             foreach (var snapshot in args.Snapshots)

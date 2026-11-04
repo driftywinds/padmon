@@ -201,6 +201,7 @@ internal static class SelfTests
         TestPauseReleasesHeldKeys();
         TestPanicChord();
         TestAnalogMovement();
+        TestHeldScrollRepeats();
 
         Console.WriteLine(_failures == 0 ? "PASS" : $"FAIL ({_failures})");
         return _failures == 0 ? 0 : 1;
@@ -279,6 +280,24 @@ internal static class SelfTests
             TimeSpan.FromMilliseconds(100));
 
         Check("left stick emits mouse movement", sink.Events.Any(item => item.StartsWith("mouse-move:", StringComparison.Ordinal)), sink);
+    }
+
+    private static void TestHeldScrollRepeats()
+    {
+        var sink = new RecordingSink();
+        var engine = new CouchEngine(
+            new CouchControlSettings { Enabled = true, ScrollSpeed = 8, ScrollDeadZone = 5000 },
+            sink);
+
+        for (var index = 0; index < 60; index++)
+        {
+            engine.Process(
+                Snapshot(axes: [(3, "Right Y", 1f, 32767, false)]),
+                TimeSpan.FromMilliseconds(16));
+        }
+
+        var scrollCount = sink.Events.Count(item => item.StartsWith("scroll:", StringComparison.Ordinal));
+        Check("held right stick repeats scrolling", scrollCount >= 4, sink);
     }
 
     private static ControllerSnapshot Snapshot(

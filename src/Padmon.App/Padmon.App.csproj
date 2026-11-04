@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Padmon.Core\Padmon.Core.csproj" SkipGetTargetFrameworkProperties="true" />
+    <ProjectReference Include="..\Padmon.Couch\Padmon.Couch.csproj" SkipGetTargetFrameworkProperties="true" />
     <ProjectReference Include="..\Padmon.Input\Padmon.Input.csproj" SkipGetTargetFrameworkProperties="true" />
   </ItemGroup>
 
