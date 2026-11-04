@@ -365,6 +365,7 @@ public sealed class CouchControlService : IDisposable
                 StringComparison.Ordinal);
 
         private readonly SendInputSink _input = new();
+        private long _moveTraceCounter;
 
         public void KeyDown(int virtualKey)
         {
@@ -390,7 +391,15 @@ public sealed class CouchControlService : IDisposable
             _input.MouseButtonUp(button);
         }
 
-        public void MoveMouse(int dx, int dy) => _input.MoveMouse(dx, dy);
+        public void MoveMouse(int dx, int dy)
+        {
+            if (Trace && (++_moveTraceCounter % 30 == 0))
+            {
+                PadmonLog.Info($"couch trace: move {dx},{dy}");
+            }
+
+            _input.MoveMouse(dx, dy);
+        }
 
         public void Scroll(int delta)
         {

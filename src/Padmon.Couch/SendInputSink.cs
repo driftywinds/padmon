@@ -77,10 +77,18 @@ public sealed class SendInputSink : ICouchInputSink
         // Couch Control click activates another app.
         if (!GetCursorPos(out var point))
         {
+            if (Trace)
+            {
+                PadmonLog.Error($"couch GetCursorPos failed: {Marshal.GetLastWin32Error()}");
+            }
+
             return;
         }
 
-        SetCursorPos(point.X + dx, point.Y + dy);
+        if (!SetCursorPos(point.X + dx, point.Y + dy) && Trace)
+        {
+            PadmonLog.Error($"couch SetCursorPos failed: {Marshal.GetLastWin32Error()}");
+        }
     }
 
     public void Scroll(int delta)
