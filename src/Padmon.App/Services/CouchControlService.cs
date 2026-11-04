@@ -94,6 +94,7 @@ public sealed class CouchControlService : IDisposable
             return;
         }
 
+        PadmonLog.Info($"couch set enabled: {enabled}");
         var control = _settings().CouchControl;
         _enabled = enabled;
         control.Enabled = enabled;
@@ -216,6 +217,7 @@ public sealed class CouchControlService : IDisposable
         var engine = _engine;
         _engine = null;
         engine.EnabledChanged -= OnEngineEnabledChanged;
+        PadmonLog.Info("couch engine stopped");
         engine.SetEnabled(false);
         engine.ReleaseAll();
         _lastSnapshot = TimeSpan.Zero;
@@ -237,6 +239,7 @@ public sealed class CouchControlService : IDisposable
 
             _enabled = engine.Enabled;
             _settings().CouchControl.Enabled = _enabled;
+            PadmonLog.Info($"couch chord set enabled: {_enabled}");
             // Keep the snapshot stream alive while the engine object exists.
             // The L3+R3 chord turns the engine off, and the same chord must be
             // able to turn it back on without reopening the page.
@@ -305,7 +308,7 @@ public sealed class CouchControlService : IDisposable
             _lastPaused = paused;
             _lastLoggedEnabled = _enabled;
             PadmonLog.Info(
-                $"couch focus: enabled={_enabled} paused={paused} active={_padmonActive} foreground=0x{foreground.ToInt64():X} main=0x{mainHandle.ToInt64():X}");
+                $"couch focus: enabled={_enabled} engine={engine.Enabled} paused={paused} active={_padmonActive} foreground=0x{foreground.ToInt64():X} main=0x{mainHandle.ToInt64():X}");
         }
 
         engine.Paused = paused;
@@ -355,19 +358,45 @@ public sealed class CouchControlService : IDisposable
 
     private sealed class CouchAppSink(CouchControlService owner) : ICouchInputSink
     {
+        private static readonly bool Trace =
+            string.Equals(
+                Environment.GetEnvironmentVariable("PADMON_COUCH_TRACE"),
+                "1",
+                StringComparison.Ordinal);
+
         private readonly SendInputSink _input = new();
 
-        public void KeyDown(int virtualKey) => _input.KeyDown(virtualKey);
+        public void KeyDown(int virtualKey)
+        {
+            TraceAction($"key down 0x{virtualKey:X2}");
+            _input.KeyDown(virtualKey);
+        }
 
-        public void KeyUp(int virtualKey) => _input.KeyUp(virtualKey);
+        public void KeyUp(int virtualKey)
+        {
+            TraceAction($"key up 0x{virtualKey:X2}");
+            _input.KeyUp(virtualKey);
+        }
 
-        public void MouseButtonDown(int button) => _input.MouseButtonDown(button);
+        public void MouseButtonDown(int button)
+        {
+            TraceAction($"mouse down {button}");
+            _input.MouseButtonDown(button);
+        }
 
-        public void MouseButtonUp(int button) => _input.MouseButtonUp(button);
+        public void MouseButtonUp(int button)
+        {
+            TraceAction($"mouse up {button}");
+            _input.MouseButtonUp(button);
+        }
 
         public void MoveMouse(int dx, int dy) => _input.MoveMouse(dx, dy);
 
-        public void Scroll(int delta) => _input.Scroll(delta);
+        public void Scroll(int delta)
+        {
+            TraceAction($"scroll {delta}");
+            _input.Scroll(delta);
+        }
 
         public void HideWindow()
         {
@@ -396,6 +425,14 @@ public sealed class CouchControlService : IDisposable
                 {
                 }
             });
+        }
+
+        private static void TraceAction(string message)
+        {
+            if (Trace)
+            {
+                PadmonLog.Info($"couch trace: {message}");
+            }
         }
     }
 }

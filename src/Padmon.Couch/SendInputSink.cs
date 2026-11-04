@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Padmon.Core.Diagnostics;
 
 namespace Padmon.Couch;
 
@@ -8,10 +9,15 @@ namespace Padmon.Couch;
 /// </summary>
 public sealed class SendInputSink : ICouchInputSink
 {
+    private static readonly bool Trace =
+        string.Equals(
+            Environment.GetEnvironmentVariable("PADMON_COUCH_TRACE"),
+            "1",
+            StringComparison.Ordinal);
+
     private const uint InputMouse = 0;
     private const uint InputKeyboard = 1;
 
-    private const uint MouseMove = 0x0001;
     private const uint MouseLeftDown = 0x0002;
     private const uint MouseLeftUp = 0x0004;
     private const uint MouseRightDown = 0x0008;
@@ -60,10 +66,21 @@ public sealed class SendInputSink : ICouchInputSink
 
     public void MoveMouse(int dx, int dy)
     {
-        if (dx != 0 || dy != 0)
+        if (dx == 0 && dy == 0)
         {
-            SendMouse(MouseMove, dx, dy, 0);
+            return;
         }
+
+        // Gopher360 moves the cursor with SetCursorPos rather than a relative
+        // SendInput move. Absolute positioning is also more predictable when
+        // the foreground window changes, which is exactly what happens when a
+        // Couch Control click activates another app.
+        if (!GetCursorPos(out var point))
+        {
+            return;
+        }
+
+        SetCursorPos(point.X + dx, point.Y + dy);
     }
 
     public void Scroll(int delta)
@@ -99,7 +116,8 @@ public sealed class SendInputSink : ICouchInputSink
             }
         };
 
-        _ = SendInput(1, [input], Marshal.SizeOf<Input>());
+        var sent = SendInput(1, [input], Marshal.SizeOf<Input>());
+        TraceResult("keyboard", sent);
     }
 
     private static void SendMouse(uint flags, int dx, int dy, int data)
@@ -119,7 +137,16 @@ public sealed class SendInputSink : ICouchInputSink
             }
         };
 
-        _ = SendInput(1, [input], Marshal.SizeOf<Input>());
+        var sent = SendInput(1, [input], Marshal.SizeOf<Input>());
+        TraceResult("mouse", sent);
+    }
+
+    private static void TraceResult(string kind, uint sent)
+    {
+        if (sent == 0 && Trace)
+        {
+            PadmonLog.Error($"couch SendInput {kind} failed: {Marshal.GetLastWin32Error()}");
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -162,4 +189,17 @@ public sealed class SendInputSink : ICouchInputSink
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern uint SendInput(uint count, Input[] inputs, int size);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetCursorPos(out Point point);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetCursorPos(int x, int y);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Point
+    {
+        public int X;
+        public int Y;
+    }
 }
