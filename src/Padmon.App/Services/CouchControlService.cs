@@ -468,9 +468,9 @@ public sealed class CouchControlService : IDisposable
 
         public void MoveMouse(int dx, int dy)
         {
-            if (Trace && (++_moveTraceCounter % 30 == 0))
+            if (++_moveTraceCounter % 30 == 0)
             {
-                PadmonLog.Info($"couch trace: move {dx},{dy}");
+                PadmonLog.Info($"couch move: {dx},{dy}");
             }
 
             // Keep movement on the UI thread as well. SendInput from the

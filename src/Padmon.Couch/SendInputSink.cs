@@ -81,13 +81,19 @@ public sealed class SendInputSink : ICouchInputSink
         var targetX = point.X + dx;
         var targetY = point.Y + dy;
 
-        // Gopher360 moves the cursor with SetCursorPos. The caller now
-        // dispatches this to the UI thread, where the input desktop is active.
-        if (SetCursorPos(targetX, targetY))
+        // Gopher360 moves the cursor with SetCursorPos. Some desktops report
+        // success without actually moving, so verify and fall back to absolute
+        // SendInput if the position did not change.
+        SetCursorPos(targetX, targetY);
+        if (GetCursorPos(out var actual) &&
+            Math.Abs(actual.X - targetX) <= 1 &&
+            Math.Abs(actual.Y - targetY) <= 1)
         {
             return;
         }
 
+        PadmonLog.Error(
+            $"couch SetCursorPos missed target {targetX},{targetY}; at {actual.X},{actual.Y}");
         SendAbsoluteMove(targetX, targetY);
     }
 
