@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.UI.Dispatching;
 using Padmon.Core.Devices;
+using Padmon.Core.Diagnostics;
 using Padmon.Core.Settings;
 using Padmon.Couch;
 using Padmon.Input;
@@ -25,6 +26,9 @@ public sealed class CouchControlService : IDisposable
     private bool _enabled;
     private bool _syncingEnabled;
     private bool _disposed;
+    private bool _padmonActive = true;
+    private bool _lastPaused;
+    private bool _lastLoggedEnabled;
     private string _status = "Off";
 
     public CouchControlService(
@@ -142,6 +146,11 @@ public sealed class CouchControlService : IDisposable
         StateChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    public void SetPadmonActive(bool active)
+    {
+        _padmonActive = active;
+    }
+
     public void SaveSettings()
     {
         if (!_disposed)
@@ -228,7 +237,10 @@ public sealed class CouchControlService : IDisposable
 
             _enabled = engine.Enabled;
             _settings().CouchControl.Enabled = _enabled;
-            _monitor.SetCouchPreview(_enabled);
+            // Keep the snapshot stream alive while the engine object exists.
+            // The L3+R3 chord turns the engine off, and the same chord must be
+            // able to turn it back on without reopening the page.
+            _monitor.SetCouchPreview(true);
             Save();
             SetStatus(_enabled ? "Active" : "Off");
             StateChanged?.Invoke(this, EventArgs.Empty);
@@ -238,7 +250,7 @@ public sealed class CouchControlService : IDisposable
     private void OnSnapshotsReceived(object? sender, ControllerSnapshotsEventArgs args)
     {
         var engine = _engine;
-        if (!_enabled || engine is null)
+        if (engine is null)
         {
             return;
         }
@@ -265,7 +277,11 @@ public sealed class CouchControlService : IDisposable
         if (selected is null)
         {
             engine.ReleaseAll();
-            SetStatus("Waiting for the selected controller.");
+            if (_enabled)
+            {
+                SetStatus("Waiting for the selected controller.");
+            }
+
             return;
         }
 
@@ -277,23 +293,39 @@ public sealed class CouchControlService : IDisposable
             elapsed = TimeSpan.FromMilliseconds(16);
         }
 
-        engine.Paused = control.PauseWhenPadmonFocused && IsPadmonForeground();
+        // Keep feeding the engine while it is off so the same L3+R3 chord can
+        // turn it back on. The engine itself suppresses normal bindings then.
+        var foreground = GetForegroundWindow();
+        var mainHandle = GetMainWindowHandle();
+        var isPadmon = _padmonActive || (mainHandle != IntPtr.Zero && foreground == mainHandle);
+        var paused = control.PauseWhenPadmonFocused && isPadmon;
+
+        if (paused != _lastPaused || _enabled != _lastLoggedEnabled)
+        {
+            _lastPaused = paused;
+            _lastLoggedEnabled = _enabled;
+            PadmonLog.Info(
+                $"couch focus: enabled={_enabled} paused={paused} active={_padmonActive} foreground=0x{foreground.ToInt64():X} main=0x{mainHandle.ToInt64():X}");
+        }
+
+        engine.Paused = paused;
         engine.Process(selected, elapsed);
+
+        if (!_enabled)
+        {
+            return;
+        }
 
         SetStatus(engine.Paused
             ? "Paused while padmon is focused — switch to another app."
             : $"Active · {selected.Device.Name}");
     }
 
-    private static bool IsPadmonForeground()
+    private static IntPtr GetMainWindowHandle()
     {
-        if (App.MainWindow is not MainWindow mainWindow)
-        {
-            return false;
-        }
-
-        var mainHandle = WinRT.Interop.WindowNative.GetWindowHandle(mainWindow);
-        return mainHandle != IntPtr.Zero && GetForegroundWindow() == mainHandle;
+        return App.MainWindow is MainWindow mainWindow
+            ? WinRT.Interop.WindowNative.GetWindowHandle(mainWindow)
+            : IntPtr.Zero;
     }
 
     private void SetStatus(string status)

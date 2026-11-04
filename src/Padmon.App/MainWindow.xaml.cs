@@ -22,6 +22,11 @@ public sealed partial class MainWindow : Window, IDisposable
     public MainWindow()
     {
         InitializeComponent();
+        Activated += (_, args) =>
+        {
+            App.Services.Couch.SetPadmonActive(
+                args.WindowActivationState != WindowActivationState.Deactivated);
+        };
         BuildInfoText.Text = $"{UpdateService.CurrentVersion} · SDL {SdlInfo.Version}";
 
         ExtendsContentIntoTitleBar = true;
