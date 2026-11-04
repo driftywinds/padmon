@@ -9,12 +9,6 @@ namespace Padmon.Couch;
 /// </summary>
 public sealed class SendInputSink : ICouchInputSink
 {
-    private static readonly bool Trace =
-        string.Equals(
-            Environment.GetEnvironmentVariable("PADMON_COUCH_TRACE"),
-            "1",
-            StringComparison.Ordinal);
-
     private const uint InputMouse = 0;
     private const uint InputKeyboard = 1;
 
@@ -77,15 +71,11 @@ public sealed class SendInputSink : ICouchInputSink
         // Couch Control click activates another app.
         if (!GetCursorPos(out var point))
         {
-            if (Trace)
-            {
-                PadmonLog.Error($"couch GetCursorPos failed: {Marshal.GetLastWin32Error()}");
-            }
-
+            PadmonLog.Error($"couch GetCursorPos failed: {Marshal.GetLastWin32Error()}");
             return;
         }
 
-        if (!SetCursorPos(point.X + dx, point.Y + dy) && Trace)
+        if (!SetCursorPos(point.X + dx, point.Y + dy))
         {
             PadmonLog.Error($"couch SetCursorPos failed: {Marshal.GetLastWin32Error()}");
         }
@@ -151,7 +141,7 @@ public sealed class SendInputSink : ICouchInputSink
 
     private static void TraceResult(string kind, uint sent)
     {
-        if (sent == 0 && Trace)
+        if (sent == 0)
         {
             PadmonLog.Error($"couch SendInput {kind} failed: {Marshal.GetLastWin32Error()}");
         }
