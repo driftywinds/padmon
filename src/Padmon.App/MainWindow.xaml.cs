@@ -3,6 +3,7 @@ using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Padmon.Core.Diagnostics;
 using Padmon.Services;
 using Padmon.Views;
 using Windows.Graphics;
@@ -245,7 +246,14 @@ public sealed partial class MainWindow : Window, IDisposable
 
         if (ContentFrame.CurrentSourcePageType != pageType)
         {
-            ContentFrame.Navigate(pageType);
+            try
+            {
+                ContentFrame.Navigate(pageType);
+            }
+            catch (Exception exception)
+            {
+                PadmonLog.Error($"navigation to '{tag}' failed", exception);
+            }
         }
     }
 }

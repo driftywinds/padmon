@@ -47,6 +47,8 @@ public sealed class CouchControlService : IDisposable
 
     public string Status => _status;
 
+    public CouchControlSettings Settings => _settings().CouchControl;
+
     public event EventHandler? StateChanged;
 
     public void SyncFromSettings()
@@ -138,6 +140,19 @@ public sealed class CouchControlService : IDisposable
         _engine?.ReleaseAll();
         Save();
         StateChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void SaveSettings()
+    {
+        if (!_disposed)
+        {
+            Save();
+        }
+    }
+
+    public void ReloadBindings()
+    {
+        _engine?.ReloadBindings();
     }
 
     public void Dispose()

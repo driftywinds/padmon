@@ -2,6 +2,7 @@
     x:Class="Padmon.Views.CouchControlPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:Padmon.ViewModels"
     Background="Transparent"
     NavigationCacheMode="Required">
 
@@ -87,11 +88,182 @@
                 </Border>
 
                 <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel Spacing="12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="2">
+                                <TextBlock Style="{StaticResource CardTitleStyle}" Text="Mappings" />
+                                <TextBlock
+                                    Style="{StaticResource CardSubtitleStyle}"
+                                    Text="One keyboard key or mouse action per controller control. The default layout mirrors classic Gopher." />
+                            </StackPanel>
+                            <HyperlinkButton
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Click="ResetMappings_Click"
+                                Content="Reset mappings"
+                                FontSize="12"
+                                Padding="0" />
+                        </Grid>
+
+                        <ItemsRepeater ItemsSource="{x:Bind MappingRows}">
+                            <ItemsRepeater.Layout>
+                                <StackLayout Spacing="0" />
+                            </ItemsRepeater.Layout>
+                            <ItemsRepeater.ItemTemplate>
+                                <DataTemplate x:DataType="vm:CouchMappingRow">
+                                    <Grid
+                                        Margin="0,8"
+                                        ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            Style="{StaticResource BodyStyle}"
+                                            Text="{x:Bind Label}" />
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            MinWidth="150"
+                                            VerticalAlignment="Center"
+                                            Style="{StaticResource CaptionStyle}"
+                                            Text="{x:Bind BindingText}"
+                                            TextAlignment="Right" />
+                                        <Button
+                                            Grid.Column="2"
+                                            Click="ChangeMapping_Click"
+                                            Content="Change"
+                                            Tag="{x:Bind Id}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsRepeater.ItemTemplate>
+                        </ItemsRepeater>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <StackPanel Spacing="14">
+                        <StackPanel Spacing="2">
+                            <TextBlock Style="{StaticResource CardTitleStyle}" Text="Pointer and scrolling" />
+                            <TextBlock
+                                Style="{StaticResource CardSubtitleStyle}"
+                                Text="Changes apply immediately and are saved automatically." />
+                        </StackPanel>
+
+                        <StackPanel Spacing="2">
+                            <TextBlock Style="{StaticResource BodyStyle}" Text="Pointer speed" />
+                            <Slider
+                                x:Name="CursorSpeedSlider"
+                                Maximum="2400"
+                                StepFrequency="50"
+                                ValueChanged="CursorSpeed_ValueChanged" />
+                            <TextBlock
+                                x:Name="CursorSpeedText"
+                                Style="{StaticResource CaptionStyle}"
+                                Text="900 px/s" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="2">
+                            <TextBlock Style="{StaticResource BodyStyle}" Text="Stick dead zone" />
+                            <Slider
+                                x:Name="DeadZoneSlider"
+                                Maximum="20000"
+                                StepFrequency="100"
+                                ValueChanged="DeadZone_ValueChanged" />
+                            <TextBlock
+                                x:Name="DeadZoneText"
+                                Style="{StaticResource CaptionStyle}"
+                                Text="6000 raw units" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="2">
+                            <TextBlock Style="{StaticResource BodyStyle}" Text="Scroll dead zone" />
+                            <Slider
+                                x:Name="ScrollDeadZoneSlider"
+                                Maximum="20000"
+                                StepFrequency="100"
+                                ValueChanged="ScrollDeadZone_ValueChanged" />
+                            <TextBlock
+                                x:Name="ScrollDeadZoneText"
+                                Style="{StaticResource CaptionStyle}"
+                                Text="5000 raw units" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="2">
+                            <TextBlock Style="{StaticResource BodyStyle}" Text="Scroll speed" />
+                            <Slider
+                                x:Name="ScrollSpeedSlider"
+                                Maximum="40"
+                                StepFrequency="1"
+                                ValueChanged="ScrollSpeed_ValueChanged" />
+                            <TextBlock
+                                x:Name="ScrollSpeedText"
+                                Style="{StaticResource CaptionStyle}"
+                                Text="8 notches/sec" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="2">
+                            <TextBlock Style="{StaticResource BodyStyle}" Text="Pointer acceleration" />
+                            <Slider
+                                x:Name="AccelerationSlider"
+                                Maximum="2"
+                                StepFrequency="0.1"
+                                ValueChanged="Acceleration_ValueChanged" />
+                            <TextBlock
+                                x:Name="AccelerationText"
+                                Style="{StaticResource CaptionStyle}"
+                                Text="0×" />
+                        </StackPanel>
+
+                        <Grid ColumnSpacing="20">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="2">
+                                <TextBlock Style="{StaticResource BodyStyle}" Text="Swap sticks" />
+                                <TextBlock
+                                    Style="{StaticResource CaptionStyle}"
+                                    Text="Use the right stick for the pointer and the left for scrolling." />
+                            </StackPanel>
+                            <ToggleSwitch
+                                x:Name="SwapSticksToggle"
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Toggled="SwapSticks_Toggled" />
+                        </Grid>
+
+                        <Grid ColumnSpacing="20">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="2">
+                                <TextBlock Style="{StaticResource BodyStyle}" Text="Pause while padmon is focused" />
+                                <TextBlock
+                                    Style="{StaticResource CaptionStyle}"
+                                    Text="Keep the app usable without the controller moving the pointer over it." />
+                            </StackPanel>
+                            <ToggleSwitch
+                                x:Name="PauseWhenFocusedToggle"
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Toggled="PauseWhenFocused_Toggled" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource SettingsCardStyle}">
                     <StackPanel Spacing="10">
-                        <TextBlock Style="{StaticResource CardTitleStyle}" Text="How it behaves" />
+                        <TextBlock Style="{StaticResource CardTitleStyle}" Text="Why Couch Control is portable-only" />
                         <TextBlock
                             Style="{StaticResource CardSubtitleStyle}"
-                            Text="Left stick moves the pointer, right stick scrolls, and the default face/shoulder/d-pad/trigger mappings follow the classic Gopher layout. Couch Control pauses while padmon is focused so the app stays configurable."
+                            Text="padmon injects keyboard and mouse input into whichever app has focus. The Microsoft Store build deliberately excludes that capability; the portable and normal-install builds keep it available."
                             TextWrapping="Wrap" />
                         <TextBlock
                             Style="{StaticResource CaptionStyle}"
