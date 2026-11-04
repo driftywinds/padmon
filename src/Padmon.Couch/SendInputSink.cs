@@ -19,6 +19,7 @@ public sealed class SendInputSink : ICouchInputSink
 
     private const uint MouseMove = 0x0001;
     private const uint MouseAbsolute = 0x8000;
+    private const uint MouseVirtualDesk = 0x4000;
     private const uint MouseLeftDown = 0x0002;
     private const uint MouseLeftUp = 0x0004;
     private const uint MouseRightDown = 0x0008;
@@ -102,7 +103,7 @@ public sealed class SendInputSink : ICouchInputSink
                 {
                     Dx = normalizedX,
                     Dy = normalizedY,
-                    Flags = MouseMove | MouseAbsolute
+                    Flags = MouseMove | MouseAbsolute | MouseVirtualDesk
                 }
             }
         };
