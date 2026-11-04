@@ -266,7 +266,7 @@ public sealed class CouchControlService : IDisposable
         engine.Process(selected, elapsed);
 
         SetStatus(engine.Paused
-            ? "Paused while padmon is focused."
+            ? "Paused while padmon is focused — switch to another app."
             : $"Active · {selected.Device.Name}");
     }
 
