@@ -164,7 +164,14 @@ public sealed partial class MainWindow : Window, IDisposable
 
     private void OnAppWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
     {
-        if (_isExiting || !App.Services.Settings.BackgroundMonitoring)
+        if (_isExiting)
+        {
+            return;
+        }
+
+        // Couch Control must keep its input loop alive even when the window is
+        // closed to the tray, otherwise the controller stops driving Windows.
+        if (!App.Services.Settings.BackgroundMonitoring && !App.Services.Couch.Enabled)
         {
             return;
         }

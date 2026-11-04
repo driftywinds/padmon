@@ -73,13 +73,26 @@ public sealed class SendInputSink : ICouchInputSink
             return;
         }
 
-        // Absolute input keeps working after another application becomes the
-        // foreground window, unlike relative mouse_event movement.
         if (!GetCursorPos(out var point))
         {
             return;
         }
 
+        var targetX = point.X + dx;
+        var targetY = point.Y + dy;
+
+        // Gopher360 moves the cursor with SetCursorPos. The caller now
+        // dispatches this to the UI thread, where the input desktop is active.
+        if (SetCursorPos(targetX, targetY))
+        {
+            return;
+        }
+
+        SendAbsoluteMove(targetX, targetY);
+    }
+
+    private static void SendAbsoluteMove(int targetX, int targetY)
+    {
         var left = GetSystemMetrics(SystemMetricXVirtualScreen);
         var top = GetSystemMetrics(SystemMetricYVirtualScreen);
         var width = GetSystemMetrics(SystemMetricVirtualScreenWidth);
@@ -89,8 +102,8 @@ public sealed class SendInputSink : ICouchInputSink
             return;
         }
 
-        var targetX = Math.Clamp(point.X + dx, left, left + width - 1);
-        var targetY = Math.Clamp(point.Y + dy, top, top + height - 1);
+        targetX = Math.Clamp(targetX, left, left + width - 1);
+        targetY = Math.Clamp(targetY, top, top + height - 1);
         var normalizedX = (int)Math.Round((targetX - left) * 65535.0 / (width - 1));
         var normalizedY = (int)Math.Round((targetY - top) * 65535.0 / (height - 1));
 
@@ -211,6 +224,9 @@ public sealed class SendInputSink : ICouchInputSink
 
     [DllImport("user32.dll")]
     private static extern bool GetCursorPos(out Point point);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetCursorPos(int x, int y);
 
     [DllImport("user32.dll")]
     private static extern int GetSystemMetrics(int index);

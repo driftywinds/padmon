@@ -29,6 +29,7 @@ public sealed class CouchControlService : IDisposable
     private bool _padmonActive = true;
     private bool _lastPaused;
     private bool _lastLoggedEnabled;
+    private long _snapshotHeartbeat;
     private string _status = "Off";
 
     public CouchControlService(
@@ -314,6 +315,14 @@ public sealed class CouchControlService : IDisposable
         engine.Paused = paused;
         engine.Process(selected, elapsed);
 
+        if (++_snapshotHeartbeat % 60 == 0)
+        {
+            PadmonLog.Info(
+                $"couch heartbeat: active={_padmonActive} paused={paused} enabled={_enabled} engine={engine.Enabled} " +
+                $"lx={Axis(selected, "Left X", 0):0.00} ly={Axis(selected, "Left Y", 1):0.00} " +
+                $"rx={Axis(selected, "Right X", 2):0.00} ry={Axis(selected, "Right Y", 3):0.00}");
+        }
+
         if (!_enabled)
         {
             return;
@@ -322,6 +331,19 @@ public sealed class CouchControlService : IDisposable
         SetStatus(engine.Paused
             ? "Paused while padmon is focused — switch to another app."
             : $"Active · {selected.Device.Name}");
+    }
+
+    private static double Axis(ControllerSnapshot snapshot, string label, int fallbackIndex)
+    {
+        var match = snapshot.Axes.FirstOrDefault(
+            axis => string.Equals(axis.Label, label, StringComparison.OrdinalIgnoreCase));
+        if (match.Label is not null)
+        {
+            return match.Value;
+        }
+
+        var byIndex = snapshot.Axes.FirstOrDefault(axis => axis.Index == fallbackIndex);
+        return byIndex.Label is null ? 0 : byIndex.Value;
     }
 
     private static IntPtr GetMainWindowHandle()
@@ -451,7 +473,10 @@ public sealed class CouchControlService : IDisposable
                 PadmonLog.Info($"couch trace: move {dx},{dy}");
             }
 
-            _input.MoveMouse(dx, dy);
+            // Keep movement on the UI thread as well. SendInput from the
+            // background SDL thread becomes unreliable once another window is
+            // foreground; clicks already use the UI thread for this reason.
+            Dispatch(() => _input.MoveMouse(dx, dy));
         }
 
         public void Scroll(int delta)
