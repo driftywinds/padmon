@@ -524,13 +524,10 @@ public sealed class CouchControlService : IDisposable
 
         private void Dispatch(Action action)
         {
-            if (owner._dispatcher.HasThreadAccess)
-            {
-                action();
-                return;
-            }
-
-            owner._dispatcher.TryEnqueue(() => action());
+            // Couch Control must keep running when padmon is hidden in the
+            // tray. Do not route input through the WinUI dispatcher: a hidden
+            // window can stop pumping it, which would silently freeze input.
+            action();
         }
 
         private static void LogClickTarget()
