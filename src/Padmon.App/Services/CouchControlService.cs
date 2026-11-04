@@ -356,6 +356,54 @@ public sealed class CouchControlService : IDisposable
     [System.Runtime.InteropServices.DllImport("user32.dll")]
     private static extern IntPtr GetForegroundWindow();
 
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool GetCursorPos(out CursorPoint point);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern IntPtr WindowFromPoint(CursorPoint point);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern IntPtr GetAncestor(IntPtr hwnd, uint flags);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hwnd);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint processId);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool GetGUIThreadInfo(uint threadId, ref GuiThreadInfo info);
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct GuiThreadInfo
+    {
+        public uint cbSize;
+        public uint flags;
+        public IntPtr hwndActive;
+        public IntPtr hwndFocus;
+        public IntPtr hwndCapture;
+        public IntPtr hwndMenuOwner;
+        public IntPtr hwndMoveSize;
+        public IntPtr hwndCaret;
+        public CaretRect rcCaret;
+    }
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct CaretRect
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    private struct CursorPoint
+    {
+        public int X;
+        public int Y;
+    }
+
     private sealed class CouchAppSink(CouchControlService owner) : ICouchInputSink
     {
         private static readonly bool Trace =
@@ -370,25 +418,30 @@ public sealed class CouchControlService : IDisposable
         public void KeyDown(int virtualKey)
         {
             TraceAction($"key down 0x{virtualKey:X2}");
-            _input.KeyDown(virtualKey);
+            Dispatch(() => _input.KeyDown(virtualKey));
         }
 
         public void KeyUp(int virtualKey)
         {
             TraceAction($"key up 0x{virtualKey:X2}");
-            _input.KeyUp(virtualKey);
+            Dispatch(() => _input.KeyUp(virtualKey));
         }
 
         public void MouseButtonDown(int button)
         {
             TraceAction($"mouse down {button}");
-            _input.MouseButtonDown(button);
+            Dispatch(() =>
+            {
+                ActivateUnderCursor();
+                LogClickTarget();
+                _input.MouseButtonDown(button);
+            });
         }
 
         public void MouseButtonUp(int button)
         {
             TraceAction($"mouse up {button}");
-            _input.MouseButtonUp(button);
+            Dispatch(() => _input.MouseButtonUp(button));
         }
 
         public void MoveMouse(int dx, int dy)
@@ -404,7 +457,7 @@ public sealed class CouchControlService : IDisposable
         public void Scroll(int delta)
         {
             TraceAction($"scroll {delta}");
-            _input.Scroll(delta);
+            Dispatch(() => _input.Scroll(delta));
         }
 
         public void HideWindow()
@@ -441,6 +494,58 @@ public sealed class CouchControlService : IDisposable
             if (Trace)
             {
                 PadmonLog.Info($"couch trace: {message}");
+            }
+        }
+
+        private void Dispatch(Action action)
+        {
+            if (owner._dispatcher.HasThreadAccess)
+            {
+                action();
+                return;
+            }
+
+            owner._dispatcher.TryEnqueue(() => action());
+        }
+
+        private static void LogClickTarget()
+        {
+            if (!GetCursorPos(out var point))
+            {
+                return;
+            }
+
+            var foreground = GetForegroundWindow();
+            var under = WindowFromPoint(point);
+            var foregroundThread = GetWindowThreadProcessId(foreground, out _);
+            var capture = IntPtr.Zero;
+            var threadInfo = new GuiThreadInfo
+            {
+                cbSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf<GuiThreadInfo>()
+            };
+
+            if (foregroundThread != 0 &&
+                GetGUIThreadInfo(foregroundThread, ref threadInfo))
+            {
+                capture = threadInfo.hwndCapture;
+            }
+
+            PadmonLog.Info(
+                $"couch click: cursor={point.X},{point.Y} foreground=0x{foreground.ToInt64():X} under=0x{under.ToInt64():X} capture=0x{capture.ToInt64():X}");
+        }
+
+        private static void ActivateUnderCursor()
+        {
+            if (!GetCursorPos(out var point))
+            {
+                return;
+            }
+
+            var under = WindowFromPoint(point);
+            var root = GetAncestor(under, 2); // GA_ROOT
+            if (root != IntPtr.Zero && root != GetForegroundWindow())
+            {
+                SetForegroundWindow(root);
             }
         }
     }

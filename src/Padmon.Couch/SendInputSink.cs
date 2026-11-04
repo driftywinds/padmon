@@ -12,6 +12,13 @@ public sealed class SendInputSink : ICouchInputSink
     private const uint InputMouse = 0;
     private const uint InputKeyboard = 1;
 
+    private const int SystemMetricXVirtualScreen = 76;
+    private const int SystemMetricYVirtualScreen = 77;
+    private const int SystemMetricVirtualScreenWidth = 78;
+    private const int SystemMetricVirtualScreenHeight = 79;
+
+    private const uint MouseMove = 0x0001;
+    private const uint MouseAbsolute = 0x8000;
     private const uint MouseLeftDown = 0x0002;
     private const uint MouseLeftUp = 0x0004;
     private const uint MouseRightDown = 0x0008;
@@ -65,20 +72,43 @@ public sealed class SendInputSink : ICouchInputSink
             return;
         }
 
-        // Gopher360 moves the cursor with SetCursorPos rather than a relative
-        // SendInput move. Absolute positioning is also more predictable when
-        // the foreground window changes, which is exactly what happens when a
-        // Couch Control click activates another app.
+        // Absolute input keeps working after another application becomes the
+        // foreground window, unlike relative mouse_event movement.
         if (!GetCursorPos(out var point))
         {
-            PadmonLog.Error($"couch GetCursorPos failed: {Marshal.GetLastWin32Error()}");
             return;
         }
 
-        if (!SetCursorPos(point.X + dx, point.Y + dy))
+        var left = GetSystemMetrics(SystemMetricXVirtualScreen);
+        var top = GetSystemMetrics(SystemMetricYVirtualScreen);
+        var width = GetSystemMetrics(SystemMetricVirtualScreenWidth);
+        var height = GetSystemMetrics(SystemMetricVirtualScreenHeight);
+        if (width <= 1 || height <= 1)
         {
-            PadmonLog.Error($"couch SetCursorPos failed: {Marshal.GetLastWin32Error()}");
+            return;
         }
+
+        var targetX = Math.Clamp(point.X + dx, left, left + width - 1);
+        var targetY = Math.Clamp(point.Y + dy, top, top + height - 1);
+        var normalizedX = (int)Math.Round((targetX - left) * 65535.0 / (width - 1));
+        var normalizedY = (int)Math.Round((targetY - top) * 65535.0 / (height - 1));
+
+        var input = new Input
+        {
+            Type = InputMouse,
+            Data = new InputUnion
+            {
+                Mouse = new MouseInput
+                {
+                    Dx = normalizedX,
+                    Dy = normalizedY,
+                    Flags = MouseMove | MouseAbsolute
+                }
+            }
+        };
+
+        var sent = SendInput(1, [input], Marshal.SizeOf<Input>());
+        TraceResult("absolute move", sent);
     }
 
     public void Scroll(int delta)
@@ -120,23 +150,10 @@ public sealed class SendInputSink : ICouchInputSink
 
     private static void SendMouse(uint flags, int dx, int dy, int data)
     {
-        var input = new Input
-        {
-            Type = InputMouse,
-            Data = new InputUnion
-            {
-                Mouse = new MouseInput
-                {
-                    Dx = dx,
-                    Dy = dy,
-                    MouseData = unchecked((uint)data),
-                    Flags = flags
-                }
-            }
-        };
-
-        var sent = SendInput(1, [input], Marshal.SizeOf<Input>());
-        TraceResult("mouse", sent);
+        // mouse_event is the older injection path. It uses the same system
+        // input queue as SendInput but some shells are more reliable with it
+        // when the calling process is not the foreground process.
+        mouse_event(flags, unchecked((uint)dx), unchecked((uint)dy), unchecked((uint)data), UIntPtr.Zero);
     }
 
     private static void TraceResult(string kind, uint sent)
@@ -189,10 +206,13 @@ public sealed class SendInputSink : ICouchInputSink
     private static extern uint SendInput(uint count, Input[] inputs, int size);
 
     [DllImport("user32.dll")]
+    private static extern void mouse_event(uint flags, uint dx, uint dy, uint data, UIntPtr extraInfo);
+
+    [DllImport("user32.dll")]
     private static extern bool GetCursorPos(out Point point);
 
     [DllImport("user32.dll")]
-    private static extern bool SetCursorPos(int x, int y);
+    private static extern int GetSystemMetrics(int index);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct Point
