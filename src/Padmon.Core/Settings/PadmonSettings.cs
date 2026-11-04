@@ -20,6 +20,11 @@ public sealed class PadmonSettings
     public bool UseNativeNotifications { get; set; }
 
     /// <summary>
+    /// Couch Control is a portable/unpackaged-only keyboard and mouse mapper.
+    /// </summary>
+    public CouchControlSettings CouchControl { get; set; } = new();
+
+    /// <summary>
     /// Absolute desktop coordinates of the in-app notification card's top-left
     /// corner. Null means use the default bottom-right position.
     /// </summary>
