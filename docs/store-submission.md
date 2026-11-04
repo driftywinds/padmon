@@ -145,6 +145,12 @@ If a reviewer cannot attach a controller, confirm that the empty state and the
 rest of the app still launch and that no controller is required to complete
 first-run.
 
+Couch Control is intentionally not available in the Store package. Packaged builds
+detect package identity and hide the Couch Control navigation item; the runtime also
+refuses to create the input-injection engine. The portable and normal-install builds
+retain the feature. There is no keyboard or mouse injection code path active in the
+Store build.
+
 ## 7. After certification
 
 When the submission is published, the Store page uses the package identity and

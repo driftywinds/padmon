@@ -38,6 +38,7 @@ A quick look at the main surfaces. Click any shot for the full-size image.
 - Merge adapter and controller identities from the History or Previously connected lists; sessions and future connections are grouped, and merges can be separated again.
 - A live tester. By default it shows a controller diagram (pressed buttons turn red, sticks move, triggers fade in) with stick graphs, B0–B17 values and numeric readouts, in the style of hardwaretester.com. The classic cards (buttons, sticks, triggers, hats, raw axes) are one toggle away in Settings → Controller tester.
 - A "More information" stats-for-nerds dialog with identity, transport, mapping, history, and live sample details.
+- Couch Control: use a selected controller as a keyboard and mouse, with editable one-action-per-control mappings, pointer/scroll tuning, dead zones, swap sticks, and an L3+R3 panic release. Clean-room implementation, portable/unpackaged builds only.
 - A tray-resident background mode, close-to-tray behavior, and opt-in start with Windows.
 - An Update tab that checks GitHub releases, identifies portable vs installed builds, and installs only when the user presses the update button. Microsoft Store builds show Store update guidance instead.
 - Windows notifications for connect/disconnect: an in-app card by default, or the normal Windows shell tray notification when enabled.
@@ -87,6 +88,25 @@ $env:PADMON_DATA_DIR = Join-Path (Get-Location) '.tmp\padmon-data'
 
 `PADMON_SIMULATE_FLAP=1` makes the simulator disconnect and reconnect periodically so notification and tray behavior can be exercised without hardware.
 
+Couch Control has its own hardware-free and live controller harness:
+
+```powershell
+# Deterministic engine tests; sends no real input
+pwsh tools/test-couch.ps1 -Mode SelfTest
+
+# List controllers and stable keys, including DInput/PS4-mode devices
+pwsh tools/test-couch.ps1 -Mode List
+
+# Log the mapped actions while you press controller controls
+pwsh tools/test-couch.ps1 -Mode Watch -Seconds 30
+
+# Send real input; use only in a window that tolerates it
+pwsh tools/test-couch.ps1 -Mode Watch -Inject -Seconds 15
+```
+
+See [docs/couch-control.md](docs/couch-control.md) for mappings, settings, and
+limitations.
+
 The app icon and tray icon are generated from `tools/generate-icon.py` (Pillow). The Store package artwork lives in `src/Padmon.Package/Assets` and is derived from the transparent mark.
 
 ## Releases
@@ -131,7 +151,8 @@ the explicit GitHub update check. See [PRIVACY.md](PRIVACY.md).
 - `src/Padmon.App` — WinUI 3 shell, pages, view models, tray, notifications.
 - `src/Padmon.Core` — controller domain models, settings, SQLite history.
 - `src/Padmon.Input` — SDL3 controller source on a dedicated background thread.
-- `src/Padmon.App/Services` — WGI fallback, source deduplication, tray, notifications, settings.
+- `src/Padmon.Couch` — clean-room Couch Control mapping engine and `SendInput` sink.
+- `src/Padmon.App/Services` — WGI fallback, source deduplication, tray, notifications, settings, and the Couch runtime.
 
 See [docs/architecture.md](docs/architecture.md) for the details.
 
@@ -140,4 +161,5 @@ See [docs/architecture.md](docs/architecture.md) for the details.
 - The controller support matrix still needs real-hardware verification. The current test set is GameSir Cyclone 2, EasySMX X20, an original Xbox One controller, and an older PowerA controller.
 - Controllers without serial numbers and without a PnP container ID may share a model fingerprint; that is shown as a model-level identity rather than pretending per-unit identity.
 - Windows tray notifications are opt-in in Settings and default to the in-app card. They use the same Shell_NotifyIcon path as the tray icon, so no administrator rights are required. A restricted session without a usable tray falls back to the in-app card.
+- Couch Control is deliberately excluded from the Microsoft Store build. It uses `SendInput`, so it cannot reach elevated windows, and anti-cheat software may treat it as automation. The clean-room implementation avoids Gopher360's GPLv3 code; see [docs/couch-control.md](docs/couch-control.md).
 - Single-instance behavior and a graceful “forget controller” flow are good next additions.
