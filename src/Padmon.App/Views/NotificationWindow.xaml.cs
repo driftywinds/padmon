@@ -13,10 +13,13 @@ public sealed partial class NotificationWindow : Window
     private readonly DispatcherQueueTimer _borderTimer;
     private bool _isPlacement;
     private bool _dragging;
+    private bool _dismissed;
     private NativePoint _dragStartCursor;
     private PointInt32 _dragStartWindow;
 
     public PointInt32 Position => AppWindow.Position;
+
+    public event EventHandler? Dismissed;
 
     public NotificationWindow()
     {
@@ -47,13 +50,14 @@ public sealed partial class NotificationWindow : Window
         _borderTimer.Tick += (_, _) => ApplyPillShape();
     }
 
-    public void ShowMessage(string title, string body)
+    public void ShowMessage(string title, string body, PointInt32? position = null)
     {
         _isPlacement = false;
+        _dismissed = false;
         _hideTimer.Stop();
         TitleText.Text = title;
         BodyText.Text = body;
-        PositionForNotification();
+        AppWindow.Move(position ?? GetNotificationPosition());
         ApplyPillShape();
 
         AppWindow.Show();
@@ -65,13 +69,59 @@ public sealed partial class NotificationWindow : Window
         _hideTimer.Start();
     }
 
+    public PointInt32 GetNotificationPosition()
+    {
+        var settings = App.Services.Settings;
+
+        if (settings.NotificationPositionX is int x &&
+            settings.NotificationPositionY is int y)
+        {
+            return ClampToWorkArea(new PointInt32(x, y));
+        }
+
+        return BottomRightPosition();
+    }
+
+    public PointInt32 GetStackBasePosition()
+    {
+        var settings = App.Services.Settings;
+
+        if (settings.NotificationPositionX is int x &&
+            settings.NotificationPositionY is int y)
+        {
+            return ClampToWorkArea(new PointInt32(x, y));
+        }
+
+        var display = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary);
+        var workArea = display.WorkArea;
+        var size = AppWindow.Size;
+        return new PointInt32(
+            workArea.X + workArea.Width - size.Width - 20,
+            workArea.Y + 20);
+    }
+
+    public void CloseNow()
+    {
+        _hideTimer.Stop();
+        _borderTimer.Stop();
+        _dismissed = true;
+        AppWindow.Hide();
+        Close();
+    }
+
+    public void MoveTo(PointInt32 position)
+    {
+        AppWindow.Move(position);
+    }
+
     public void ShowForPlacement()
     {
         _isPlacement = true;
+        _dismissed = false;
         _hideTimer.Stop();
         TitleText.Text = "Notification position";
         BodyText.Text = "Drag this card anywhere on any display, then save its position.";
-        PositionForNotification();
+        AppWindow.Move(GetNotificationPosition());
         ApplyPillShape();
 
         AppWindow.Show();
@@ -120,6 +170,16 @@ public sealed partial class NotificationWindow : Window
         return new PointInt32(
             Math.Clamp(point.X, workArea.X, maxX),
             Math.Clamp(point.Y, workArea.Y, maxY));
+    }
+
+    private PointInt32 BottomRightPosition()
+    {
+        var display = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary);
+        var workArea = display.WorkArea;
+        var size = AppWindow.Size;
+        var x = workArea.X + workArea.Width - size.Width - 20;
+        var y = workArea.Y + workArea.Height - size.Height - 24;
+        return new PointInt32(x, y);
     }
 
     private void PositionBottomRight()
@@ -267,7 +327,15 @@ public sealed partial class NotificationWindow : Window
     private void HideWindow()
     {
         _hideTimer.Stop();
+
+        if (_dismissed)
+        {
+            return;
+        }
+
+        _dismissed = true;
         AppWindow.Hide();
+        Dismissed?.Invoke(this, EventArgs.Empty);
     }
 
     private void Root_PointerPressed(object sender, PointerRoutedEventArgs e)

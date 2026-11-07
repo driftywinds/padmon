@@ -23,7 +23,7 @@ public sealed class KnownControllerViewModel
 
     public string MergedLabel { get; } = "MERGED";
 
-    public string MergeActionText => IsMerged ? "Separate" : "Merge";
+    public string MergeActionText { get; } = "Manage";
 
     public string Initials => InitialsOf(Record.DisplayName);
 

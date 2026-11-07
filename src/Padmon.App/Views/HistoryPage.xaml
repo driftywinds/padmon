@@ -55,7 +55,7 @@
                         <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Known controllers" />
                         <TextBlock
                             Style="{StaticResource CaptionStyle}"
-                            Text="Use Merge to combine two identities, or the delete button to forget a controller." />
+                            Text="Use Manage to group up to ten identities under one tracked controller, or the delete button to forget a controller." />
                     </StackPanel>
 
                     <Border

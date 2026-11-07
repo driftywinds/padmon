@@ -35,12 +35,12 @@ A quick look at the main surfaces. Click any shot for the full-size image.
 - A persistent local catalogue of controllers, including first-seen, last-seen, and session count.
 - New/known device handling, battery and transport information where the device exposes it.
 - App-level renaming that uses the chosen name throughout the UI and notifications.
-- Merge adapter and controller identities from the History or Previously connected lists; sessions and future connections are grouped, and merges can be separated again.
+- Merge adapter and controller identities from the History or Previously connected lists; group up to ten identities under one tracked controller, with a Manage dialog for adding, removing, and renaming individual identities.
 - A live tester. By default it shows a controller diagram (pressed buttons turn red, sticks move, triggers fade in) with stick graphs, B0–B17 values and numeric readouts, in the style of hardwaretester.com. The classic cards (buttons, sticks, triggers, hats, raw axes) are one toggle away in Settings → Controller tester.
 - A "More information" stats-for-nerds dialog with identity, transport, mapping, history, and live sample details.
 - A tray-resident background mode, close-to-tray behavior, and opt-in start with Windows.
 - An Update tab that checks GitHub releases, identifies portable vs installed builds, and installs only when the user presses the update button. Microsoft Store builds show Store update guidance instead.
-- Windows notifications for connect/disconnect: an in-app card by default, or the normal Windows shell tray notification when enabled.
+- Windows notifications for connect/disconnect: an in-app card stack by default, with newer cards taking the anchor position and older cards sliding down, or the normal Windows shell tray notification when enabled.
 - SQLite history with retention settings; no cloud, telemetry, or account.
 - A Microsoft Store MSIX build with a Store-managed update path.
 

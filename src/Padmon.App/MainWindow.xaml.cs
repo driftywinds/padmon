@@ -12,7 +12,8 @@ namespace Padmon;
 public sealed partial class MainWindow : Window, IDisposable
 {
     private TrayIconService? _trayIcon;
-    private NotificationWindow? _notificationWindow;
+    private NotificationWindow? _placementWindow;
+    private readonly NotificationDeck _notificationDeck;
     private bool _trayInitialized;
     private bool _isExiting;
 
@@ -21,6 +22,7 @@ public sealed partial class MainWindow : Window, IDisposable
     public MainWindow()
     {
         InitializeComponent();
+        _notificationDeck = new NotificationDeck(DispatcherQueue);
         BuildInfoText.Text = $"{UpdateService.CurrentVersion} · SDL {SdlInfo.Version}";
 
         ExtendsContentIntoTitleBar = true;
@@ -128,26 +130,32 @@ public sealed partial class MainWindow : Window, IDisposable
         _trayIcon?.Dispose();
         _trayIcon = null;
 
-        _notificationWindow?.Close();
-        _notificationWindow = null;
+        _notificationDeck.Dispose();
+        _placementWindow?.Close();
+        _placementWindow = null;
     }
 
     private void ShowInAppNotification(string title, string body)
     {
-        _notificationWindow ??= new NotificationWindow();
-        _notificationWindow.ShowMessage(title, body);
+        if (!DispatcherQueue.HasThreadAccess)
+        {
+            DispatcherQueue.TryEnqueue(() => _notificationDeck.Show(title, body));
+            return;
+        }
+
+        _notificationDeck.Show(title, body);
     }
 
     public NotificationWindow ShowNotificationPlacement()
     {
-        _notificationWindow ??= new NotificationWindow();
-        _notificationWindow.ShowForPlacement();
-        return _notificationWindow;
+        _placementWindow ??= new NotificationWindow();
+        _placementWindow.ShowForPlacement();
+        return _placementWindow;
     }
 
     public void HideNotificationPlacement()
     {
-        _notificationWindow?.HideForPlacement();
+        _placementWindow?.HideForPlacement();
     }
 
     private void OnAppWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
