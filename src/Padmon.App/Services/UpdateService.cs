@@ -31,6 +31,13 @@ public sealed record UpdateCheckResult(
     bool CanInstall,
     string? Error = null);
 
+public sealed record UpdateDownloadProgress(long BytesReceived, long? TotalBytes)
+{
+    public double? Percent => TotalBytes is > 0
+        ? Math.Clamp(BytesReceived * 100.0 / TotalBytes.Value, 0, 100)
+        : null;
+}
+
 public sealed class UpdateService
 {
     private const string ReleasesApi = "https://api.github.com/repos/driftywinds/padmon/releases/latest";
@@ -255,35 +262,102 @@ public sealed class UpdateService
 
     public static async Task InstallAsync(
         UpdateCheckResult update,
+        IProgress<UpdateDownloadProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
-        if (!update.CanInstall ||
-            string.IsNullOrWhiteSpace(update.AssetUrl) ||
-            string.IsNullOrWhiteSpace(update.LatestVersion))
-        {
-            throw new InvalidOperationException("No installable update is available.");
-        }
+        var downloaded = await DownloadAsync(update, progress, cancellationToken).ConfigureAwait(false);
+        await InstallDownloadedAsync(update, downloaded, cancellationToken).ConfigureAwait(false);
+    }
 
-        if (IsStoreBuild)
-        {
-            throw new InvalidOperationException(
-                "This copy of padmon is installed from the Microsoft Store. Use the Store to update it.");
-        }
+    public static async Task<string> DownloadAsync(
+        UpdateCheckResult update,
+        IProgress<UpdateDownloadProgress>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureInstallable(update);
 
-        var root = Path.Combine(UpdatesRoot, update.LatestVersion);
+        var root = Path.Combine(UpdatesRoot, update.LatestVersion!);
         Directory.CreateDirectory(root);
 
         var downloaded = Path.Combine(root, update.AssetName ?? "update.bin");
-        using (var client = CreateClient())
-        using (var response = await client.GetAsync(
-                   update.AssetUrl,
-                   HttpCompletionOption.ResponseHeadersRead,
-                   cancellationToken).ConfigureAwait(false))
+        var partial = downloaded + ".part";
+
+        try
         {
+            using var client = CreateClient();
+            using var response = await client.GetAsync(
+                       update.AssetUrl,
+                       HttpCompletionOption.ResponseHeadersRead,
+                       cancellationToken).ConfigureAwait(false);
+
             response.EnsureSuccessStatusCode();
-            await using var source = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-            await using var destination = File.Create(downloaded);
-            await source.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
+            var total = response.Content.Headers.ContentLength;
+
+            await using var source = await response.Content
+                .ReadAsStreamAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            var buffer = new byte[81920];
+            var bytesReceived = 0L;
+            var lastReport = 0L;
+            progress?.Report(new UpdateDownloadProgress(0, total));
+
+            await using (var destination = File.Create(partial))
+            {
+                while (true)
+                {
+                    var read = await source
+                        .ReadAsync(buffer, cancellationToken)
+                        .ConfigureAwait(false);
+                    if (read == 0)
+                    {
+                        break;
+                    }
+
+                    await destination
+                        .WriteAsync(buffer.AsMemory(0, read), cancellationToken)
+                        .ConfigureAwait(false);
+                    bytesReceived += read;
+
+                    var now = Environment.TickCount64;
+                    if (now - lastReport >= 100)
+                    {
+                        lastReport = now;
+                        progress?.Report(new UpdateDownloadProgress(bytesReceived, total));
+                    }
+                }
+
+                await destination.FlushAsync(cancellationToken).ConfigureAwait(false);
+            }
+
+            progress?.Report(new UpdateDownloadProgress(bytesReceived, total));
+            File.Move(partial, downloaded, overwrite: true);
+            return downloaded;
+        }
+        catch
+        {
+            try
+            {
+                File.Delete(partial);
+            }
+            catch
+            {
+            }
+
+            throw;
+        }
+    }
+
+    public static async Task InstallDownloadedAsync(
+        UpdateCheckResult update,
+        string downloaded,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureInstallable(update);
+
+        if (!File.Exists(downloaded))
+        {
+            throw new FileNotFoundException("The downloaded update file is missing.", downloaded);
         }
 
         var target = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
@@ -300,6 +374,7 @@ public sealed class UpdateService
         }
         else
         {
+            var root = Path.Combine(UpdatesRoot, update.LatestVersion!);
             var staging = Path.Combine(root, "app");
             if (Directory.Exists(staging))
             {
@@ -350,6 +425,22 @@ public sealed class UpdateService
         }
 
         PadmonLog.Info($"update installer started for {update.LatestVersion}");
+    }
+
+    private static void EnsureInstallable(UpdateCheckResult update)
+    {
+        if (!update.CanInstall ||
+            string.IsNullOrWhiteSpace(update.AssetUrl) ||
+            string.IsNullOrWhiteSpace(update.LatestVersion))
+        {
+            throw new InvalidOperationException("No installable update is available.");
+        }
+
+        if (IsStoreBuild)
+        {
+            throw new InvalidOperationException(
+                "This copy of padmon is installed from the Microsoft Store. Use the Store to update it.");
+        }
     }
 
     /// <summary>
